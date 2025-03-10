@@ -216,14 +216,34 @@ footer {
     z-index: 2;
 }
 
-.chessboard .square.selected {
-    background-color: rgba(106, 159, 181, 0.5);
+.chessboard .square.selected::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    z-index: 1;
 }
 
 .chessboard .square.valid-move {
     position: relative;
 }
 
+.chessboard .square.valid-move:hover::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
 .chessboard .square.valid-move::after {
     content: '';
     position: absolute;
@@ -233,6 +253,13 @@ footer {
     width: 25%;
     height: 25%;
     background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.chessboard .square.valid-move.valid-capture::after {
+    width: 85%;
+    height: 85%;
     border-radius: 50%;
     z-index: 1;
 }
@@ -352,16 +379,6 @@ footer {
     }
 }
 
-/* Updated Chess Board with integrated notation */
-.board-wrapper {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: 1fr auto;
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-}
-
 .rank-indicator, .file-indicator {
     position: absolute;
     font-size: clamp(0.6rem, calc(0.5vw + 0.4rem), 1.2rem);
@@ -399,61 +416,6 @@ footer {
     width: 100%;
     border: 2px solid #2c3e50;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Adjust existing .chessboard styles to apply to .squares-container instead */
-.squares-container .square {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.squares-container .white {
-    background-color: #f0d9b5;
-}
-
-.squares-container .black {
-    background-color: #b58863;
-}
-
-.squares-container .piece {
-    width: 80%;
-    height: 80%;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-    z-index: 2;
-}
-
-.squares-container .square.selected {
-    background-color: rgba(106, 159, 181, 0.5);
-}
-
-.squares-container .square.valid-move {
-    position: relative;
-}
-
-.squares-container .square.valid-move::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 25%;
-    height: 25%;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    z-index: 1;
-}
-
-/* Hide the old board notation since we've integrated it */
-.board-notation {
-    display: none;
 }
 
 /* Promotion Dialog */

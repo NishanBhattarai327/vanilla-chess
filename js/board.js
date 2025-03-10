@@ -152,6 +152,13 @@ class ChessBoard {
             const fromCol = parseInt(this.selectedSquare.getAttribute('data-col'));
             const actualFromRow = this.flipped ? 7 - fromRow : fromRow;
             const actualFromCol = this.flipped ? 7 - fromCol : fromCol;
+
+             // Check if the user clicked the same square that was already selected
+             if (row === fromRow && col === fromCol) {
+                this.clearHighlights();
+                this.selectedSquare = null;
+                return; // Exit the function to prevent further processing
+            }
             
             // Check if the selected square is a valid move
             const isValidMove = this.validMoves.some(move => 
@@ -246,6 +253,11 @@ class ChessBoard {
             const targetSquare = this.container.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
             if (targetSquare) {
                 targetSquare.classList.add('valid-move');
+                // Check if this is a capture move
+                const hasPiece = targetSquare.querySelector('.piece');
+                if (hasPiece) {
+                    targetSquare.classList.add('valid-capture');
+                }
             }
         });
     }
@@ -254,7 +266,7 @@ class ChessBoard {
     clearHighlights() {
         const squares = this.container.querySelectorAll('.square');
         squares.forEach(square => {
-            square.classList.remove('selected', 'valid-move');
+            square.classList.remove('selected', 'valid-move', 'valid-capture');
         });
     }
 
