@@ -25,6 +25,7 @@ class ChessGame {
     registerEventHandlers() {
         if (this.board) {
             this.board.on('onMove', (move) => this.handleMove(move));
+            this.board.on('onPromotion', (move) => this.handlePromotion(move));
         }
         
         if (this.timer) {
@@ -101,11 +102,11 @@ class ChessGame {
         }));
     }
 
-    makeMove(from, to) {
+    makeMove(from, to, promotionPiece = 'q') {
         const moveObj = {
             from: this.positions.toAlgebraic(from),
             to: this.positions.toAlgebraic(to),
-            promotion: 'q' // automatically promote to queen for simplicity
+            promotion: promotionPiece
         };
         
         try {
@@ -165,6 +166,15 @@ class ChessGame {
         }
         
         return false;
+    }
+
+    // New method to check if a move would result in promotion
+    isPromotion(from, to) {
+        const piece = this.chess.get(this.positions.toAlgebraic(from));
+        return piece && 
+               piece.type === 'p' && 
+               ((piece.color === 'w' && to.row === 0) || 
+                (piece.color === 'b' && to.row === 7));
     }
 
     async makeBotMove() {
@@ -262,7 +272,14 @@ class ChessGame {
     handleMove(move) {
         if (!this.gameActive) return;
         
-        this.makeMove(move.from, move.to);
+        this.makeMove(move.from, move.to, move.promotion);
+    }
+
+    // New method to handle promotion
+    handlePromotion(move) {
+        if (!this.gameActive) return;
+        
+        this.makeMove(move.from, move.to, move.promotion);
     }
 
     updateStatus() {

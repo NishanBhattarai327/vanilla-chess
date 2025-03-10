@@ -158,12 +158,17 @@ class ChessBoard {
                 move.to.row === actualRow && move.to.col === actualCol);
             
             if (isValidMove) {
-                // Make the move
-                if (this.callbacks.onMove) {
-                    this.callbacks.onMove({
-                        from: { row: actualFromRow, col: actualFromCol },
-                        to: { row: actualRow, col: actualCol }
-                    });
+                const from = { row: actualFromRow, col: actualFromCol };
+                const to = { row: actualRow, col: actualCol };
+                
+                // Check if this is a pawn promotion
+                if (game.isPromotion(from, to)) {
+                    this.showPromotionDialog(from, to, game.getCurrentPlayer());
+                } else {
+                    // Make the move
+                    if (this.callbacks.onMove) {
+                        this.callbacks.onMove({ from, to });
+                    }
                 }
                 
                 this.clearHighlights();
@@ -185,6 +190,36 @@ class ChessBoard {
                 this.selectSquare(square, game);
             }
         }
+    }
+
+    // New method to show promotion dialog
+    showPromotionDialog(from, to, playerColor) {
+        // Create and show promotion dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'promotion-dialog';
+        
+        const pieces = ['q', 'r', 'n', 'b'];  // Queen, Rook, Knight, Bishop
+        
+        pieces.forEach(piece => {
+            const pieceElement = document.createElement('div');
+            pieceElement.className = 'promotion-piece';
+            const pieceType = (playerColor === 'white' ? 'w' : 'b') + piece.toUpperCase();
+            pieceElement.style.backgroundImage = `url('${this.pieceImages[pieceType]}')`;
+            
+            pieceElement.addEventListener('click', () => {
+                if (this.callbacks.onPromotion) {
+                    this.callbacks.onPromotion({ from, to, promotion: piece });
+                } else if (this.callbacks.onMove) {
+                    // Use onMove with promotion piece if onPromotion isn't available
+                    this.callbacks.onMove({ from, to, promotion: piece });
+                }
+                dialog.remove();
+            });
+            
+            dialog.appendChild(pieceElement);
+        });
+        
+        this.container.appendChild(dialog);
     }
 
     // Select a square and show valid moves
