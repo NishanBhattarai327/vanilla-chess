@@ -1,7 +1,7 @@
 # Chess App Documentation
 
 ## 1. Project Overview
-The Chess App is a web-based chess game built using vanilla JavaScript with an object-oriented approach. It allows users to play chess against an AI bot with adjustable difficulty levels. The application features a responsive design, chess timer functionality, game history storage, and interactive game replay.
+The Chess App is a web-based chess game built using vanilla JavaScript with an object-oriented approach. It allows users to play chess against an AI bot with adjustable difficulty levels. The application features a responsive design, chess timer functionality, game history storage, sound effects, and interactive game replay.
 
 ### Main Features
 - Play against an AI bot with three difficulty levels (easy, medium, hard)
@@ -10,6 +10,8 @@ The Chess App is a web-based chess game built using vanilla JavaScript with an o
 - Game history storage and interactive replay functionality
 - Visual indicators for selected pieces and valid moves
 - Player color selection (white or black)
+- Sound effects for moves, captures, checks, and other game events
+- Volume control and mute functionality
 
 ## 2. System Architecture
 
@@ -45,7 +47,13 @@ The application follows an object-oriented architecture with several core compon
    - Uses localStorage for client-side persistence
    - Provides retrieval methods for game replay
 
-6. **Application Initialization** (app.js)
+6. **ChessSoundManager** (sound.js)
+   - Handles all audio feedback in the game
+   - Supports both audio file playback and synthesized sounds using Web Audio API
+   - Provides distinct sounds for different chess events (moves, captures, checks, etc.)
+   - Includes volume control and mute functionality
+
+7. **Application Initialization** (app.js)
    - Initializes and connects all components
    - Sets up event handlers and UI interactions
    - Manages game modals and UI updates
@@ -55,6 +63,8 @@ The application follows an object-oriented architecture with several core compon
 User → ChessBoard → ChessGame → ChessBot
                   ↕           ↕
                 ChessTimer → GameStorage
+                  ↕
+              ChessSoundManager
 ```
 
 ## 3. File Structure
@@ -66,13 +76,18 @@ chess-app/
 ├── img/                        # Directory for chess piece images
 │   ├── wP.svg, wR.svg, etc.    # White pieces (Pawn, Rook, etc.)
 │   └── bP.svg, bR.svg, etc.    # Black pieces (Pawn, Rook, etc.)
+├── sounds/                     # Optional directory for sound files (if used)
+│   ├── move.mp3                # Sound for regular moves
+│   ├── capture.mp3             # Sound for capturing pieces
+│   └── check.mp3, etc.         # Additional sounds for various game events
 ├── js/
 │   ├── app.js                  # Main application initialization
 │   ├── board.js                # Chess board UI and interaction
 │   ├── bot.js                  # AI opponent logic
 │   ├── game.js                 # Core game mechanics
 │   ├── storage.js              # Game history storage
-│   └── timer.js                # Chess clock functionality
+│   ├── timer.js                # Chess clock functionality
+│   └── sound.js                # Sound effects management
 ├── index.html                  # Main HTML structure
 ├── documentation.md            # This comprehensive documentation
 ├── design.md                   # Design documentation and architecture
@@ -88,13 +103,14 @@ chess-app/
 - **bot.js**: AI opponent with three difficulty levels and move evaluation.
 - **timer.js**: Chess clock implementation with various time formats.
 - **storage.js**: Game history storage using localStorage.
+- **sound.js**: Sound effects manager with both audio file and synthesized sound support.
 - **styles.css**: Complete styling for the application with responsive design.
 
 ## 4. Functionality
 
 ### Game Initialization Flow
 1. **DOM Content Loaded**
-   - app.js initializes core components
+   - app.js initializes core components including sound manager
    - Default settings are applied
    - New game is started
 
@@ -111,10 +127,11 @@ chess-app/
 3. User clicks on a destination square
 4. ChessBoard sends move to ChessGame
 5. ChessGame validates and executes the move
-6. Board is updated with new position
-7. Timer switches to opponent
-8. Game checks for end conditions
-9. Bot calculates and makes its move
+6. Appropriate sound effect is played based on move type (regular move, capture, check, etc.)
+7. Board is updated with new position
+8. Timer switches to opponent
+9. Game checks for end conditions
+10. Bot calculates and makes its move
 
 ### Bot Move Flow
 1. ChessBot.getMove() is called with current game state
@@ -123,9 +140,10 @@ chess-app/
    - Medium: Prioritizes captures and checks
    - Hard: Evaluates positions to find best move
 3. Bot "thinks" for a short delay based on level
-4. Move is executed and board is updated
-5. Timer switches back to player
-6. Game checks for end conditions
+4. Move is executed and appropriate sound is played
+5. Board is updated with new position
+6. Timer switches back to player
+7. Game checks for end conditions
 
 ### Game End Conditions
 1. **Checkmate**: A player's king is in check and has no legal moves
@@ -143,6 +161,27 @@ chess-app/
    - Play/Pause button for automatic playback
    - Next Move button
 4. Chess positions are displayed at each move
+5. Sound effects are played during replay to match the move types
+
+### Sound System
+1. **Sound Types**:
+   - Move: Standard piece movement
+   - Capture: When a piece is captured
+   - Check: When a king is in check
+   - Checkmate: When a king is checkmated
+   - Stalemate: When the game ends in stalemate
+   - Castling: When the king castles
+   - Promotion: When a pawn is promoted
+
+2. **Sound Controls**:
+   - Mute button to toggle sounds on/off
+   - Volume slider to adjust sound volume
+   - Sounds automatically play during both player moves and replays
+
+3. **Technical Implementation**:
+   - Uses Web Audio API for synthesized sounds with fallback to audio files
+   - Supports both audio file playback and synthesized sounds
+   - Dynamically generates appropriate sounds based on move type
 
 ## 5. Feature Updates
 
@@ -192,106 +231,51 @@ async getMove(game) {
 </select>
 ```
 
-### Adding Sound Effects
+### Customizing Sound Effects
 
-1. **Create an audio directory**:
-```
-chess-app/
-└── audio/
-    ├── move.mp3
-    ├── capture.mp3
-    ├── check.mp3
-    └── gameEnd.mp3
-```
-
-2. **Create a new sound.js file**:
+1. **Create custom sound profiles**:
 ```javascript
-// filepath: js/sound.js
-class SoundManager {
-    constructor() {
-        this.sounds = {
-            move: new Audio('audio/move.mp3'),
-            capture: new Audio('audio/capture.mp3'),
-            check: new Audio('audio/check.mp3'),
-            gameEnd: new Audio('audio/gameEnd.mp3')
+// In sound.js
+class CustomSoundProfile extends ChessSoundManager {
+    constructor(options) {
+        super(options);
+        
+        // Override default sounds with custom ones
+        this.soundFiles = {
+            'move': 'custom-move.mp3',
+            'capture': 'custom-capture.mp3',
+            'check': 'custom-check.mp3',
+            // ...other sounds
         };
-        this.enabled = true;
     }
     
-    play(soundName) {
-        if (this.enabled && this.sounds[soundName]) {
-            this.sounds[soundName].currentTime = 0;
-            this.sounds[soundName].play();
-        }
-    }
-    
-    toggle() {
-        this.enabled = !this.enabled;
-        return this.enabled;
+    // Optionally override synthesized sound methods
+    synthesizeMove(destination) {
+        // Custom implementation for synthesized move sound
+        // ...implementation...
     }
 }
 ```
 
-3. **Update app.js to initialize the sound manager**:
-```javascript
-// Add after other component initializations
-const sound = new SoundManager();
-
-// Add sound toggle button to the UI and event listener
-elements.soundToggleBtn.addEventListener('click', () => {
-    const soundEnabled = sound.toggle();
-    elements.soundToggleBtn.innerHTML = soundEnabled ? 
-        '<i class="fas fa-volume-up"></i>' : 
-        '<i class="fas fa-volume-mute"></i>';
-});
-```
-
-4. **Update game.js to play sounds**:
-```javascript
-makeMove(from, to) {
-    // ...existing code...
-    
-    try {
-        const move = this.chess.move(moveObj);
-        if (move) {
-            // Play appropriate sound
-            if (this.callbacks.onSoundPlay) {
-                if (move.flags.includes('c')) {
-                    this.callbacks.onSoundPlay('capture');
-                } else {
-                    this.callbacks.onSoundPlay('move');
-                }
-                
-                if (this.chess.in_check()) {
-                    setTimeout(() => this.callbacks.onSoundPlay('check'), 150);
-                }
-            }
-            
-            // ...rest of existing code...
-        }
-    }
-    // ...existing code...
-}
-
-endGame() {
-    // ...existing code...
-    
-    // Play game end sound
-    if (this.callbacks.onSoundPlay) {
-        this.callbacks.onSoundPlay('gameEnd');
-    }
-    
-    // ...rest of existing code...
-}
-```
-
-5. **Update index.html to load sound.js and add sound toggle button**:
+2. **Add a sound theme selector to index.html**:
 ```html
-<!-- Add to game controls -->
-<button id="sound-toggle-btn"><i class="fas fa-volume-up"></i></button>
+<div class="setting-group">
+    <label for="sound-theme">Sound Theme:</label>
+    <select id="sound-theme">
+        <option value="standard" selected>Standard</option>
+        <option value="classic">Classic</option>
+        <option value="modern">Modern</option>
+    </select>
+</div>
+```
 
-<!-- Add before app.js script load -->
-<script src="js/sound.js"></script>
+3. **Update app.js to handle theme selection**:
+```javascript
+elements.soundThemeSelect = document.getElementById('sound-theme');
+elements.soundThemeSelect.addEventListener('change', () => {
+    const theme = elements.soundThemeSelect.value;
+    chessSound.setTheme(theme);
+});
 ```
 
 ### Implementing Piece Promotion Dialog
@@ -420,6 +404,7 @@ This is a more complex update that would require a separate detailed documentati
 
 ### Libraries and Documentation
 - [Chess.js Documentation](https://github.com/jhlywa/chess.js/blob/master/README.md) - The JavaScript chess library used for game logic
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Documentation for the audio synthesis used in the sound manager
 - [Font Awesome](https://fontawesome.com/icons) - Icons used in the user interface
 - [Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) - Documentation for localStorage used in game history
 
