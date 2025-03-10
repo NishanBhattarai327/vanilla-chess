@@ -12,6 +12,7 @@ The Chess App is a web-based chess game built using vanilla JavaScript with an o
 - Player color selection (white or black)
 - Sound effects for moves, captures, checks, and other game events
 - Volume control and mute functionality
+- Customizable sound themes (standard, classic, modern)
 
 ## 2. System Architecture
 
@@ -23,40 +24,51 @@ The application follows an object-oriented architecture with several core compon
    - Manages game lifecycle (start, play, end)
    - Coordinates interactions between other components
    - Uses chess.js library for rules and validation
+   - Handles position conversion between algebraic notation and row/column coordinates
 
 2. **ChessBoard** (board.js)
    - Handles the visual representation and rendering of the chess board
    - Manages user interactions (selecting pieces, making moves)
    - Shows visual indicators for selected pieces and valid moves
    - Provides integrated rank and file notation
+   - Supports board flipping when playing as black
 
 3. **ChessBot** (bot.js)
    - Implements the AI opponent with three difficulty levels
    - Uses different strategies based on selected level:
      - Easy: Random moves
      - Medium: Prioritizes captures and checks
-     - Hard: Uses position evaluation
+     - Hard: Uses position evaluation with piece value assessment, center control bonuses, and tactical considerations
 
 4. **ChessTimer** (timer.js)
-   - Implements chess clock functionality
+   - Implements chess clock functionality with configurable time formats
    - Manages time for both players
    - Handles time-based game termination
+   - Supports time display formatting
 
 5. **GameStorage** (storage.js)
-   - Manages persistent storage of game history
-   - Uses localStorage for client-side persistence
+   - Manages persistent storage of game history using localStorage
+   - Stores PGN notation, move history, and game results
    - Provides retrieval methods for game replay
+   - Limits storage to the most recent 10 games
 
 6. **ChessSoundManager** (sound.js)
-   - Handles all audio feedback in the game
-   - Supports both audio file playback and synthesized sounds using Web Audio API
-   - Provides distinct sounds for different chess events (moves, captures, checks, etc.)
-   - Includes volume control and mute functionality
+   - Advanced sound system with dual implementation:
+     - Audio file playback for standard sounds
+     - Web Audio API for synthesized sounds when audio files are unavailable
+   - Provides distinct sounds for different chess events:
+     - Regular moves with wooden click effects
+     - Captures with impact sounds
+     - Checks, checkmates, stalemates with appropriate alerts
+     - Special moves (castling, promotion) with distinctive sounds
+   - Features volume control, mute functionality, and sound themes
+   - Includes sophisticated audio synthesis with ADSR envelopes and filters for realistic wooden chess sounds
 
 7. **Application Initialization** (app.js)
    - Initializes and connects all components
    - Sets up event handlers and UI interactions
    - Manages game modals and UI updates
+   - Handles game replay functionality
 
 ### Component Interaction Diagram
 ```
@@ -72,14 +84,18 @@ User → ChessBoard → ChessGame → ChessBot
 ```
 chess-app/
 ├── css/
-│   └── styles.css              # Main stylesheet for the entire application
+│   └── styles.css              # Main stylesheet with responsive design
 ├── img/                        # Directory for chess piece images
 │   ├── wP.svg, wR.svg, etc.    # White pieces (Pawn, Rook, etc.)
 │   └── bP.svg, bR.svg, etc.    # Black pieces (Pawn, Rook, etc.)
-├── sounds/                     # Optional directory for sound files (if used)
+├── sounds/                     # Directory for sound files
 │   ├── move.mp3                # Sound for regular moves
 │   ├── capture.mp3             # Sound for capturing pieces
-│   └── check.mp3, etc.         # Additional sounds for various game events
+│   ├── check.mp3               # Sound for checks
+│   ├── checkmate.mp3           # Sound for checkmate
+│   ├── stalemate.mp3           # Sound for stalemate
+│   ├── promotion.mp3           # Sound for pawn promotion
+│   └── castling.mp3            # Sound for castling
 ├── js/
 │   ├── app.js                  # Main application initialization
 │   ├── board.js                # Chess board UI and interaction
@@ -87,31 +103,30 @@ chess-app/
 │   ├── game.js                 # Core game mechanics
 │   ├── storage.js              # Game history storage
 │   ├── timer.js                # Chess clock functionality
-│   └── sound.js                # Sound effects management
+│   └── sound.js                # Advanced sound effects management
 ├── index.html                  # Main HTML structure
 ├── documentation.md            # This comprehensive documentation
-├── design.md                   # Design documentation and architecture
-└── style.md                    # Style guide for the application
+└── .vscode/                    # VSCode configuration
 ```
 
 ### Key Files Explained
 
-- **index.html**: Main entry point that sets up the HTML structure, loads necessary scripts and styles.
-- **app.js**: Initializes the application, connects components, and sets up event listeners.
-- **game.js**: Core game logic using chess.js for rules enforcement.
-- **board.js**: Visual representation and user interaction with the chess board.
-- **bot.js**: AI opponent with three difficulty levels and move evaluation.
-- **timer.js**: Chess clock implementation with various time formats.
-- **storage.js**: Game history storage using localStorage.
-- **sound.js**: Sound effects manager with both audio file and synthesized sound support.
-- **styles.css**: Complete styling for the application with responsive design.
+- **index.html**: Entry point that sets up the HTML structure, includes chess.js library, and loads application scripts.
+- **app.js**: Initializes components, connects them together, and handles game and replay functionality.
+- **game.js**: Core game logic with position conversion utilities, move validation, and game state management.
+- **board.js**: Visual representation with piece placement, move highlighting, and user interaction handling.
+- **bot.js**: AI opponent with three difficulty levels and sophisticated move evaluation for harder levels.
+- **timer.js**: Chess clock implementation with time tracking, formatting, and player switching.
+- **storage.js**: Game history management using localStorage with PGN and move history storage.
+- **sound.js**: Comprehensive sound system with both file playback and Web Audio API synthesis.
+- **styles.css**: Complete styling with responsive design for different screen sizes.
 
 ## 4. Functionality
 
 ### Game Initialization Flow
 1. **DOM Content Loaded**
-   - app.js initializes core components including sound manager
-   - Default settings are applied
+   - app.js initializes core components including sound manager with default volume and theme
+   - Default settings are applied (medium bot level, player as white, 10-minute timer)
    - New game is started
 
 2. **Starting a New Game**
@@ -119,14 +134,14 @@ chess-app/
    - ChessGame.start() initializes the game
    - Board is set up with pieces in starting positions
    - Timer is initialized with selected time format
-   - If player is black, bot makes first move
+   - If player is black, board is flipped and bot makes first move
 
 ### Player Move Flow
 1. User clicks on a piece of their color
 2. Valid moves are highlighted on the board
 3. User clicks on a destination square
 4. ChessBoard sends move to ChessGame
-5. ChessGame validates and executes the move
+5. ChessGame validates and executes the move using chess.js
 6. Appropriate sound effect is played based on move type (regular move, capture, check, etc.)
 7. Board is updated with new position
 8. Timer switches to opponent
@@ -137,13 +152,40 @@ chess-app/
 1. ChessBot.getMove() is called with current game state
 2. Based on difficulty level:
    - Easy: Selects a random valid move
-   - Medium: Prioritizes captures and checks
-   - Hard: Evaluates positions to find best move
-3. Bot "thinks" for a short delay based on level
+   - Medium: Prioritizes captures and checks over random moves
+   - Hard: Evaluates positions with piece values, center control, and check bonuses
+3. Bot "thinks" for a delay period based on level (500ms for easy, 1000ms for medium, 2000ms for hard)
 4. Move is executed and appropriate sound is played
 5. Board is updated with new position
 6. Timer switches back to player
 7. Game checks for end conditions
+
+### Sound System Details
+1. **Dual Implementation**:
+   - Tries to use pre-recorded audio files first
+   - Falls back to Web Audio API synthesis if files are unavailable
+   - Resumable AudioContext to comply with browser autoplay policies
+
+2. **Sound Types and Implementation**:
+   - Move: Simulates wooden piece placement with transients and resonance
+   - Capture: More substantial wooden impact with deeper resonance
+   - Check: Alert tone with specific frequencies
+   - Checkmate: Multi-tone sequence indicating game end
+   - Stalemate: Neutral ending tone
+   - Castling: Two sequential wooden clicks with timing separation
+   - Promotion: Celebratory tone sequence
+
+3. **Advanced Audio Features**:
+   - ADSR envelope control (Attack, Decay, Sustain, Release)
+   - Low-pass filtering for realistic wooden sounds
+   - Noise generation with custom shaping for authentic chess piece movement
+   - Multiple oscillators for rich, complex sounds
+   - Volume normalization and consistent acoustic character
+
+4. **Themable Sound System**:
+   - Standard, Classic, and Modern built-in themes
+   - Support for custom theme creation
+   - API for adding new themes at runtime
 
 ### Game End Conditions
 1. **Checkmate**: A player's king is in check and has no legal moves
@@ -155,128 +197,16 @@ chess-app/
 
 ### Game Replay Flow
 1. User clicks "Replay Game" button in the end game modal
-2. Replay modal opens with the saved game
+2. Replay modal opens with the saved game loaded from storage
 3. User can navigate through moves using:
-   - Previous Move button
-   - Play/Pause button for automatic playback
-   - Next Move button
-4. Chess positions are displayed at each move
+   - Previous Move button to step backward
+   - Play/Pause button for automatic playback at 1-second intervals
+   - Next Move button to step forward
+4. Chess positions are displayed for each move with appropriate piece placement
 5. Sound effects are played during replay to match the move types
-
-### Sound System
-1. **Sound Types**:
-   - Move: Standard piece movement
-   - Capture: When a piece is captured
-   - Check: When a king is in check
-   - Checkmate: When a king is checkmated
-   - Stalemate: When the game ends in stalemate
-   - Castling: When the king castles
-   - Promotion: When a pawn is promoted
-
-2. **Sound Controls**:
-   - Mute button to toggle sounds on/off
-   - Volume slider to adjust sound volume
-   - Sounds automatically play during both player moves and replays
-
-3. **Technical Implementation**:
-   - Uses Web Audio API for synthesized sounds with fallback to audio files
-   - Supports both audio file playback and synthesized sounds
-   - Dynamically generates appropriate sounds based on move type
+6. Replay status shows current move number and total moves
 
 ## 5. Feature Updates
-
-### Adding a New Bot Difficulty Level
-
-1. **Modify bot.js**:
-```javascript
-// Add new level to thinkingTime object
-constructor(level = 'medium') {
-    this.level = level;
-    this.thinkingTime = {
-        'easy': 500,
-        'medium': 1000,
-        'hard': 2000,
-        'expert': 3000  // Add new level
-    };
-}
-
-// Create a new method for the expert level
-getExpertLevelMove(game, possibleMoves) {
-    // More sophisticated evaluation logic
-    // For example, considering piece positioning, king safety, etc.
-    // ...implementation...
-}
-
-// Update getMove method to include the new level
-async getMove(game) {
-    // ...existing code...
-    
-    // Expert: More sophisticated evaluation
-    if (this.level === 'expert') {
-        return this.getExpertLevelMove(game, possibleMoves);
-    }
-    
-    // Hard: Evaluate positions and choose best
-    return this.getHardLevelMove(game, possibleMoves);
-}
-```
-
-2. **Update index.html**:
-```html
-<select id="bot-level">
-    <option value="easy">Easy</option>
-    <option value="medium" selected>Medium</option>
-    <option value="hard">Hard</option>
-    <option value="expert">Expert</option>  <!-- Add new level -->
-</select>
-```
-
-### Customizing Sound Effects
-
-1. **Create custom sound profiles**:
-```javascript
-// In sound.js
-class CustomSoundProfile extends ChessSoundManager {
-    constructor(options) {
-        super(options);
-        
-        // Override default sounds with custom ones
-        this.soundFiles = {
-            'move': 'custom-move.mp3',
-            'capture': 'custom-capture.mp3',
-            'check': 'custom-check.mp3',
-            // ...other sounds
-        };
-    }
-    
-    // Optionally override synthesized sound methods
-    synthesizeMove(destination) {
-        // Custom implementation for synthesized move sound
-        // ...implementation...
-    }
-}
-```
-
-2. **Add a sound theme selector to index.html**:
-```html
-<div class="setting-group">
-    <label for="sound-theme">Sound Theme:</label>
-    <select id="sound-theme">
-        <option value="standard" selected>Standard</option>
-        <option value="classic">Classic</option>
-        <option value="modern">Modern</option>
-    </select>
-</div>
-```
-
-3. **Update app.js to handle theme selection**:
-```javascript
-elements.soundThemeSelect = document.getElementById('sound-theme');
-elements.soundThemeSelect.addEventListener('change', () => {
-    const theme = elements.soundThemeSelect.value;
-    chessSound.setTheme(theme);
-});
-```
 
 ### Implementing Piece Promotion Dialog
 
@@ -389,6 +319,172 @@ showPromotionDialog(from, to, playerColor) {
 }
 ```
 
+### Adding a New Bot Difficulty Level
+
+1. **Modify bot.js**:
+```javascript
+// Add new level to thinkingTime object
+constructor(level = 'medium') {
+    this.level = level;
+    this.thinkingTime = {
+        'easy': 500,
+        'medium': 1000,
+        'hard': 2000,
+        'expert': 3000  // Add new level
+    };
+}
+
+// Create a new method for the expert level
+getExpertLevelMove(game, possibleMoves) {
+    // More sophisticated evaluation logic
+    // For example, considering piece positioning, king safety, etc.
+    // ...implementation...
+}
+
+// Update getMove method to include the new level
+async getMove(game) {
+    // ...existing code...
+    
+    // Expert: More sophisticated evaluation
+    if (this.level === 'expert') {
+        return this.getExpertLevelMove(game, possibleMoves);
+    }
+    
+    // Hard: Evaluate positions and choose best
+    return this.getHardLevelMove(game, possibleMoves);
+}
+```
+
+2. **Update index.html**:
+```html
+<select id="bot-level">
+    <option value="easy">Easy</option>
+    <option value="medium" selected>Medium</option>
+    <option value="hard">Hard</option>
+    <option value="expert">Expert</option>  <!-- Add new level -->
+</select>
+```
+
+### Adding Support for Openings Book
+
+1. **Create a new file openings.js**:
+```javascript
+class OpeningsBook {
+    constructor() {
+        this.openings = {
+            'e2e4': ['e7e5', 'c7c5', 'e7e6'],  // King's Pawn
+            'e2e4 e7e5': ['g1f3', 'f1c4'],     // After 1.e4 e5
+            'e2e4 c7c5': ['g1f3', 'd2d4'],     // Sicilian
+            // Add more openings as needed
+        };
+    }
+    
+    getMove(moveHistory) {
+        const historyString = moveHistory.map(m => m.from + m.to).join(' ');
+        if (this.openings[historyString]) {
+            const moves = this.openings[historyString];
+            return moves[Math.floor(Math.random() * moves.length)];
+        }
+        return null;
+    }
+}
+```
+
+2. **Update bot.js to use openings book**:
+```javascript
+async getMove(game) {
+    // Simulate "thinking" time
+    await new Promise(resolve => setTimeout(resolve, this.thinkingTime[this.level]));
+    
+    // Use openings book for the first few moves if available
+    if (this.openingsBook && game.moveHistory.length < 10) {
+        const bookMove = this.openingsBook.getMove(game.moveHistory);
+        if (bookMove) {
+            // Convert from simple notation (e2e4) to chess.js move object
+            const from = bookMove.substring(0, 2);
+            const to = bookMove.substring(2, 4);
+            const possibleMoves = this.getAllPossibleMoves(game);
+            const move = possibleMoves.find(m => m.from === from && m.to === to);
+            if (move) return move;
+        }
+    }
+    
+    // Fall back to regular move selection
+    const possibleMoves = this.getAllPossibleMoves(game);
+    // ...existing code...
+}
+```
+
+### Enhancing the Sound System with Environmental Effects
+
+1. **Add reverb to the sound manager**:
+```javascript
+class ChessSoundManager {
+    constructor(options = {}) {
+        // ...existing code...
+        this.reverbEnabled = options.reverbEnabled !== false;
+        
+        // Initialize reverb effect
+        if (this.audioContext) {
+            this.createReverb();
+        }
+    }
+    
+    // Create reverb effect
+    createReverb() {
+        this.reverbNode = this.audioContext.createConvolver();
+        
+        // Generate impulse response for small room reverb
+        const sampleRate = this.audioContext.sampleRate;
+        const length = sampleRate * 2.0; // 2 second impulse
+        const impulse = this.audioContext.createBuffer(2, length, sampleRate);
+        const leftChannel = impulse.getChannelData(0);
+        const rightChannel = impulse.getChannelData(1);
+        
+        let decay = 2.0;
+        for (let i = 0; i < length; i++) {
+            const n = i / length;
+            leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
+            rightChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
+        }
+        
+        this.reverbNode.buffer = impulse;
+    }
+    
+    // Route sound through reverb if enabled
+    playWithReverb(audioNode) {
+        if (this.reverbEnabled && this.reverbNode) {
+            const dryGain = this.audioContext.createGain();
+            const wetGain = this.audioContext.createGain();
+            
+            dryGain.gain.value = 0.7;
+            wetGain.gain.value = 0.3;
+            
+            audioNode.connect(dryGain);
+            audioNode.connect(this.reverbNode);
+            this.reverbNode.connect(wetGain);
+            
+            dryGain.connect(this.audioContext.destination);
+            wetGain.connect(this.audioContext.destination);
+        } else {
+            audioNode.connect(this.audioContext.destination);
+        }
+    }
+}
+```
+
+2. **Add UI control for environmental effects**:
+```html
+<div class="setting-group">
+    <label for="sound-environment">Sound Environment:</label>
+    <select id="sound-environment">
+        <option value="none">None</option>
+        <option value="room" selected>Small Room</option>
+        <option value="hall">Concert Hall</option>
+    </select>
+</div>
+```
+
 ### Adding Multiplayer Support
 
 This would require significant changes, but here's a high-level approach:
@@ -399,6 +495,7 @@ This would require significant changes, but here's a high-level approach:
 4. Add chat functionality
 
 This is a more complex update that would require a separate detailed documentation.
+
 
 ## 6. Helpful Resources
 
@@ -412,6 +509,7 @@ This is a more complex update that would require a separate detailed documentati
 - [Chess Rules](https://www.chess.com/learn-how-to-play-chess) - Basic rules of chess
 - [Chess Notation](https://en.wikipedia.org/wiki/Algebraic_notation_(chess)) - Explanation of algebraic chess notation
 - [Chess Strategy](https://www.chess.com/lessons) - Resources for understanding chess strategy
+- [Opening Theory](https://www.chessprogramming.org/Openings) - Information about chess openings
 
 ### Development Resources
 - [JavaScript OOP](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/Object-oriented_programming) - Object-oriented programming in JavaScript
@@ -422,3 +520,4 @@ This is a more complex update that would require a separate detailed documentati
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page) - Resources for chess programming and AI
 - [Minimax Algorithm](https://en.wikipedia.org/wiki/Minimax) - Algorithm used in more advanced chess engines
 - [Alpha-Beta Pruning](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning) - Optimization for the minimax algorithm
+- [Evaluation Functions](https://www.chessprogramming.org/Evaluation) - How to evaluate chess positions
