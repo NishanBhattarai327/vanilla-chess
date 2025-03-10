@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess App</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <h1>Chess App</h1>
+    </header>
+
+    <main>
+        <div class="game-container">
+            <div class="game-sidebar">
+                <div class="game-info">
+                    <div class="player-info player-top">
+                        <div class="player-name" id="opponent-name">Bot</div>
+                        <div class="player-time" id="opponent-time">10:00</div>
+                    </div>
+
+                    <div class="game-controls">
+                        <button id="new-game-btn">New Game</button>
+                        <button id="undo-btn">Undo Move</button>
+                        <button id="resign-btn">Resign</button>
+                    </div>
+
+                    <div class="game-status" id="game-status">White to move</div>
+
+                    <div class="player-info player-bottom">
+                        <div class="player-name" id="player-name">Player</div>
+                        <div class="player-time" id="player-time">10:00</div>
+                    </div>
+                </div>
+
+                <div class="settings-panel">
+                    <h3>Game Settings</h3>
+                    <div class="setting-group">
+                        <label for="bot-level">Bot Level:</label>
+                        <select id="bot-level">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="player-color">Your Color:</label>
+                        <select id="player-color">
+                            <option value="white" selected>White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="time-format">Time Format:</label>
+                        <select id="time-format">
+                            <option value="5">5 Minutes</option>
+                            <option value="10" selected>10 Minutes</option>
+                            <option value="15">15 Minutes</option>
+                            <option value="30">30 Minutes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="move-history">
+                    <h3>Move History</h3>
+                    <div id="moves-list" class="moves-list"></div>
+                </div>
+            </div>
+
+            <div id="board-container" class="board-container"></div>
+        </div>
+    </main>
+
+    <!-- Game End Modal -->
+    <div id="game-end-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="game-result">Game Over</h2>
+            <p id="game-result-details"></p>
+            <div class="modal-buttons">
+                <button id="replay-game-btn">Replay Game</button>
+                <button id="new-game-modal-btn">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Replay Modal -->
+    <div id="replay-modal" class="modal">
+        <div class="modal-content replay-content">
+            <span class="close-replay-modal">&times;</span>
+            <h2>Game Replay</h2>
+            <div id="replay-board" class="chessboard"></div>
+            <div class="replay-controls">
+                <button id="replay-prev"><i class="fas fa-step-backward"></i></button>
+                <button id="replay-play"><i class="fas fa-play"></i></button>
+                <button id="replay-next"><i class="fas fa-step-forward"></i></button>
+            </div>
+            <div id="replay-status" class="replay-status">Move: 0/0</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Chess App</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/bot.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
