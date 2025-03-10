@@ -45,6 +45,11 @@ class ChessGame {
         this.bot.setLevel(botLevel);
         this.board.init(this, playerColor === 'black');
         
+        // Notify that move history has been reset
+        if (this.callbacks.onMovesUpdate) {
+            this.callbacks.onMovesUpdate();
+        }
+        
         // Start timer if player goes first
         if (this.getCurrentPlayer() === this.playerColor) {
             this.timer.start(this.getCurrentPlayer());
@@ -108,6 +113,11 @@ class ChessGame {
             if (move) {
                 // Record move in history
                 this.moveHistory.push(move);
+                
+                // Notify about move history update
+                if (this.callbacks.onMovesUpdate) {
+                    this.callbacks.onMovesUpdate();
+                }
                 
                 // Determine which sound to play
                 if (this.callbacks.onSoundPlay) {
@@ -183,6 +193,11 @@ class ChessGame {
         this.moveHistory.pop();
         if (this.moveHistory.length > 0) {
             this.moveHistory.pop();
+        }
+        
+        // Notify about move history update
+        if (this.callbacks.onMovesUpdate) {
+            this.callbacks.onMovesUpdate();
         }
         
         // Update board

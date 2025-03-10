@@ -1,7 +1,8 @@
 // Create chessSound as a global variable
 const chessSound = new ChessSoundManager({
     audioPath: 'sounds/',  // Directory where your sound files are stored
-    volume: 0.5           // Initial volume level (0.0 to 1.0)
+    volume: 0.5,          // Initial volume level (0.0 to 1.0)
+    theme: 'standard'     // Initial theme
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,7 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
         replayPrevBtn: document.getElementById('replay-prev'),
         replayPlayBtn: document.getElementById('replay-play'),
         replayNextBtn: document.getElementById('replay-next'),
-        replayStatus: document.getElementById('replay-status')
+        replayStatus: document.getElementById('replay-status'),
+        // Sound control elements
+        muteBtn: document.getElementById('mute-btn'),
+        volumeSlider: document.getElementById('volume-slider'),
+        soundThemeSelect: document.getElementById('sound-theme')
     };
     
     const muteBtn = document.getElementById('mute-btn');
@@ -87,10 +92,32 @@ document.addEventListener('DOMContentLoaded', () => {
     volumeSlider.addEventListener('input', () => {
         chessSound.setVolume(volumeSlider.value / 100);
     });
+    
+    elements.soundThemeSelect.addEventListener('change', () => {
+        const theme = elements.soundThemeSelect.value;
+        chessSound.setTheme(theme);
+        
+        // Play a sample sound to demonstrate the theme change
+        setTimeout(() => chessSound.play('move'), 100);
+    });
+    
+    // Add a custom theme example (for demonstration)
+    const customTheme = {
+        'move': 'custom-move.mp3',
+        'capture': 'custom-capture.mp3',
+        'check': 'custom-check.mp3',
+        'checkmate': 'custom-checkmate.mp3',
+        'stalemate': 'custom-stalemate.mp3',
+        'promotion': 'custom-promotion.mp3',
+        'castling': 'custom-castling.mp3'
+    };
+    chessSound.addTheme('custom', customTheme);
 
     // Register callbacks
     game.on('onStatusUpdate', updateStatus);
     game.on('onGameEnd', showGameEndModal);
+    // Register callback for move history updates
+    game.on('onMovesUpdate', updateMovesList);
     
     // Function implementations
     function startNewGame() {
@@ -99,12 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const botLevel = elements.botLevelSelect.value;
         
         game.start(playerColor, timeInMinutes, botLevel);
-        updateMovesList();
+        // Clear move list at start of game
+        elements.movesList.innerHTML = '';
     }
     
     function undoMove() {
         game.undoLastMove();
-        updateMovesList();
+        // updateMovesList is now handled by the callback
     }
     
     function resignGame() {

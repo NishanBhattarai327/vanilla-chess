@@ -8,6 +8,7 @@ class ChessSoundManager {
         this.volume = options.volume || 0.5;
         this.useAudioFiles = options.useAudioFiles !== false;
         this.audioPath = options.audioPath || '';
+        this.currentTheme = options.theme || 'standard';
         
         // Define paths to sound files
         this.soundFiles = {
@@ -20,9 +21,45 @@ class ChessSoundManager {
             'castling': 'castling.mp3'
         };
         
+        // Define sound themes
+        this.soundThemes = {
+            'standard': {
+                'move': 'move.mp3',
+                'capture': 'capture.mp3',
+                'check': 'check.mp3',
+                'checkmate': 'checkmate.mp3',
+                'stalemate': 'stalemate.mp3',
+                'promotion': 'promotion.mp3',
+                'castling': 'castling.mp3'
+            },
+            'classic': {
+                'move': 'classic-move.mp3',
+                'capture': 'classic-capture.mp3',
+                'check': 'classic-check.mp3',
+                'checkmate': 'classic-checkmate.mp3',
+                'stalemate': 'classic-stalemate.mp3',
+                'promotion': 'classic-promotion.mp3',
+                'castling': 'classic-castling.mp3'
+            },
+            'modern': {
+                'move': 'modern-move.mp3',
+                'capture': 'modern-capture.mp3',
+                'check': 'modern-check.mp3',
+                'checkmate': 'modern-checkmate.mp3',
+                'stalemate': 'modern-stalemate.mp3',
+                'promotion': 'modern-promotion.mp3',
+                'castling': 'modern-castling.mp3'
+            }
+        };
+        
         // Override default files if provided
         if (options.soundFiles) {
             this.soundFiles = { ...this.soundFiles, ...options.soundFiles };
+        }
+        
+        // Apply initial theme
+        if (this.currentTheme && this.soundThemes[this.currentTheme]) {
+            this.soundFiles = { ...this.soundFiles, ...this.soundThemes[this.currentTheme] };
         }
         
         this.audioContext = null;
@@ -672,5 +709,90 @@ class ChessSoundManager {
             audio.load();
             this.audioElements[soundType] = audio;
         }
+    }
+
+    /**
+     * Set the current sound theme
+     * @param {string} theme - Theme name ('standard', 'classic', 'modern', etc.)
+     */
+    setTheme(theme) {
+        if (!this.soundThemes[theme]) {
+            console.warn(`Unknown sound theme: ${theme}`);
+            return false;
+        }
+        
+        this.currentTheme = theme;
+        
+        // Update sound files with the selected theme
+        this.soundFiles = { ...this.soundFiles, ...this.soundThemes[theme] };
+        
+        // Clear existing audio elements to force reload with new sound files
+        this.audioElements = {};
+        
+        console.log(`Sound theme set to: ${theme}`);
+        return true;
+    }
+    
+    /**
+     * Add a custom sound theme
+     * @param {string} themeName - Name of the theme
+     * @param {Object} themeFiles - Object mapping sound types to file paths
+     */
+    addTheme(themeName, themeFiles) {
+        if (typeof themeName !== 'string' || typeof themeFiles !== 'object') {
+            console.error('Invalid theme parameters');
+            return false;
+        }
+        
+        this.soundThemes[themeName] = { ...themeFiles };
+        console.log(`Added sound theme: ${themeName}`);
+        return true;
+    }
+}
+
+/**
+ * CustomSoundProfile - Extends ChessSoundManager for custom sound themes
+ */
+class CustomSoundProfile extends ChessSoundManager {
+    constructor(options) {
+        super(options);
+        
+        // Override default sounds with custom ones
+        this.soundFiles = {
+            'move': 'custom-move.mp3',
+            'capture': 'custom-capture.mp3',
+            'check': 'custom-check.mp3',
+            'checkmate': 'custom-checkmate.mp3',
+            'stalemate': 'custom-stalemate.mp3',
+            'promotion': 'custom-promotion.mp3',
+            'castling': 'custom-castling.mp3'
+        };
+    }
+    
+    // Optionally override synthesized sound methods
+    synthesizeMove(destination) {
+        // Custom implementation for synthesized move sound
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.value = this.volume;
+        gainNode.connect(destination || this.audioContext.destination);
+        
+        this.synthesizeComplexSound([
+            {
+                // Custom tone for move sound
+                frequency: 1200,
+                duration: 0.020, 
+                volume: 0.30,
+                type: 'sine',
+                envelope: { attack: 0.001, decay: 0.01, sustain: 0.05, release: 0.01 }
+            },
+            {
+                frequency: 600,
+                duration: 0.040,
+                volume: 0.25,
+                type: 'sine',
+                delay: 0.008,
+                envelope: { attack: 0.001, decay: 0.02, sustain: 0.1, release: 0.03 }
+            }
+        ], gainNode);
     }
 }
