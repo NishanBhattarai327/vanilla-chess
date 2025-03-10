@@ -1,3 +1,9 @@
+// Create chessSound as a global variable
+const chessSound = new ChessSoundManager({
+    audioPath: 'sounds/',  // Directory where your sound files are stored
+    volume: 0.5           // Initial volume level (0.0 to 1.0)
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize core components for the chess application
     const board = new ChessBoard('board-container');
@@ -8,6 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Connect all components together through game object
     game.init(board, timer, bot, storage);
+    
+    // Register sound callback with the game
+    game.on('onSoundPlay', (soundType) => {
+        chessSound.play(soundType);
+    });
     
     // Cache DOM elements
     const elements = {
@@ -38,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
         replayStatus: document.getElementById('replay-status')
     };
     
+    const muteBtn = document.getElementById('mute-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+
     // Initialize replay functionality variables
     let replayGame = null;
     let replayMoveIndex = 0;
@@ -63,6 +77,17 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.replayPlayBtn.addEventListener('click', toggleReplayPlayback);
     elements.replayNextBtn.addEventListener('click', replayNextMove);
     
+    muteBtn.addEventListener('click', () => {
+        const soundEnabled = chessSound.toggle();
+        muteBtn.innerHTML = soundEnabled ? 
+            '<i class="fas fa-volume-up"></i>' : 
+            '<i class="fas fa-volume-mute"></i>';
+    });
+
+    volumeSlider.addEventListener('input', () => {
+        chessSound.setVolume(volumeSlider.value / 100);
+    });
+
     // Register callbacks
     game.on('onStatusUpdate', updateStatus);
     game.on('onGameEnd', showGameEndModal);
@@ -153,6 +178,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // Utility function to determine the sound type for a chess move
+    function getSoundForMove(move) {
+        if (!move) return 'move';
+        
+        if (move.captured) {
+            return 'capture';
+        } else if (move.flags && (move.flags.includes('k') || move.flags.includes('q'))) {
+            return 'castling';
+        } else if (move.flags && move.flags.includes('p')) {
+            return 'promotion';
+        }
+        
+        return 'move';
+    }
+    
     // Function to update the replay board to show the current move
     function updateReplayBoard() {
         if (!replayGame) return;
@@ -162,10 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
             replayChess.undo();
         }
         
+        let lastMove = null;
+        
         // Apply all moves up to the current replay index
         for (let i = 0; i < replayMoveIndex; i++) {
             if (replayGame.moves[i]) {
-                replayChess.move(replayGame.moves[i]);
+                lastMove = replayChess.move(replayGame.moves[i]);
             }
         }
         
@@ -196,8 +238,23 @@ document.addEventListener('DOMContentLoaded', () => {
             // If playback is paused, start it
             replayInterval = setInterval(() => {
                 if (replayMoveIndex < replayGame.moves.length) {
+                    const move = replayGame.moves[replayMoveIndex];
                     replayMoveIndex++;
                     updateReplayBoard();
+                    
+                    // Play sound effect for the move
+                    if (move) {
+                        chessSound.play(getSoundForMove(move));
+                        
+                        // If this move results in a check, play the check sound after a slight delay
+                        if (replayChess.in_check()) {
+                            setTimeout(() => chessSound.play('check'), 150);
+                        } else if (replayChess.in_checkmate()) {
+                            setTimeout(() => chessSound.play('checkmate'), 150);
+                        } else if (replayChess.in_stalemate()) {
+                            setTimeout(() => chessSound.play('stalemate'), 150);
+                        }
+                    }
                 } else {
                     // Stop playback when we reach the end
                     clearInterval(replayInterval);
@@ -221,16 +278,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (replayMoveIndex > 0) {
             replayMoveIndex--;
             updateReplayBoard();
+            // Optional: Play a UI sound for going back
         }
     }
     
     function replayNextMove() {
         if (replayGame && replayMoveIndex < replayGame.moves.length) {
+            const move = replayGame.moves[replayMoveIndex];
             replayMoveIndex++;
             updateReplayBoard();
+            
+            // Play sound effect for the move
+            if (move) {
+                chessSound.play(getSoundForMove(move));
+                
+                // If this move results in a check, play the check sound after a slight delay
+                if (replayChess.in_check()) {
+                    setTimeout(() => chessSound.play('check'), 150);
+                } else if (replayChess.in_checkmate()) {
+                    setTimeout(() => chessSound.play('checkmate'), 150);
+                } else if (replayChess.in_stalemate()) {
+                    setTimeout(() => chessSound.play('stalemate'), 150);
+                }
+            }
         }
     }
     
     // Start a new game when the page loads
     startNewGame();
 });
+
+document.addEventListener('click', () => {
+    chessSound.resumeAudioContext();
+}, { once: true });

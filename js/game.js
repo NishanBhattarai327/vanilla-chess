@@ -109,6 +109,28 @@ class ChessGame {
                 // Record move in history
                 this.moveHistory.push(move);
                 
+                // Determine which sound to play
+                if (this.callbacks.onSoundPlay) {
+                    if (move.flags.includes('c')) {
+                        this.callbacks.onSoundPlay('capture');
+                    } else if (move.flags.includes('k') || move.flags.includes('q')) {
+                        this.callbacks.onSoundPlay('castling');
+                    } else if (move.flags.includes('p')) {
+                        this.callbacks.onSoundPlay('promotion');
+                    } else {
+                        this.callbacks.onSoundPlay('move');
+                    }
+                    
+                    // Check for check or checkmate
+                    if (this.chess.in_checkmate()) {
+                        this.callbacks.onSoundPlay('checkmate');
+                    } else if (this.chess.in_check()) {
+                        this.callbacks.onSoundPlay('check');
+                    } else if (this.chess.in_stalemate()) {
+                        this.callbacks.onSoundPlay('stalemate');
+                    }
+                }
+                
                 // Update board and switch timer
                 this.board.updateBoard(this);
                 this.timer.switchTimer();
@@ -193,6 +215,11 @@ class ChessGame {
             } else if (this.chess.in_threefold_repetition()) {
                 this.result += ' by threefold repetition';
             }
+        }
+        
+        // Play game end sound if callback exists
+        if (this.callbacks.onSoundPlay) {
+            this.callbacks.onSoundPlay('checkmate'); // or another appropriate sound
         }
         
         // Save game to storage
