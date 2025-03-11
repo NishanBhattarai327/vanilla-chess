@@ -19,10 +19,14 @@ A modern web-based chess application built with vanilla JavaScript that allows u
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/vanilla-chess.git
+   git clone https://github.com/NishanBhattarai327/vanilla-chess.git
    ```
-2. Open `index.html` in your web browser
-3. Start playing chess!
+2. Navigate to the project directory:
+   ```bash
+   cd vanilla-chess
+   ```
+3. Open `index.html` in your web browser
+4. Start playing chess!
 
 No build process or server setup required - this application runs entirely in the browser.
 
