@@ -41,6 +41,8 @@ Comprehensive documentation available in the `docs/` directory:
 - [Technical Documentation](docs/technical-documentation.md): Complete system architecture
 - [Move Execution Process](docs/move-execution.md): Detailed move processing flow
 - [Piece Selection](docs/piece-selection.md): Visual feedback implementation
+- [Game Replay](docs/game-replay.md): Step-by-step playback system for reviewing completed games
+- [Drag and Drop](docs/drag-and-drop.md): Implementation of intuitive drag-and-drop piece movement with cross-platform support
 
 ## Development
 
