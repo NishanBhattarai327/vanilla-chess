@@ -505,3 +505,25 @@ footer {
         margin: 3px;
     }
 }
+
+/* Last move highlight */
+.chessboard .square.last-move {
+    position: relative;
+}
+
+.chessboard .square.last-move::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 0, 0.3);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Ensure the last-move highlight doesn't interfere with check highlight */
+.chessboard .square.last-move.check::before {
+    background-color: rgba(255, 165, 0, 0.4);
+}

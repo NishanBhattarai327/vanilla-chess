@@ -22,6 +22,12 @@ class ChessBoard {
         this.mouseDownPosition = null;
         this.isPotentialDrag = false;
         this.dragThreshold = 5; // Minimum pixels to move before starting drag
+
+        // Add properties to track the last move
+        this.lastMove = {
+            from: null,
+            to: null
+        };
     }
 
     // Initialize the board with pieces
@@ -45,6 +51,12 @@ class ChessBoard {
         
         // Add drag and drop event listeners
         this.setupDragAndDrop();
+
+        // Reset last move tracking when initializing a new board
+        this.lastMove = {
+            from: null,
+            to: null
+        };
     }
     
     // New method to set up drag and drop
@@ -244,6 +256,12 @@ class ChessBoard {
                 const from = this.dragStartPosition;
                 const to = { row: actualTargetRow, col: actualTargetCol };
                 
+                // Update last move for highlighting
+                this.lastMove = {
+                    from: { row: from.row, col: from.col },
+                    to: { row: to.row, col: to.col }
+                };
+                
                 // Check for pawn promotion
                 if (this.gameRef.isPromotion && this.gameRef.isPromotion(from, to)) {
                     this.showPromotionDialog(from, to, this.gameRef.getCurrentPlayer());
@@ -351,6 +369,45 @@ class ChessBoard {
         
         // Highlight king in check after all pieces are placed
         this.highlightKingInCheck(game);
+
+        // Update last move information from game if available (to capture bot moves)
+        this.updateLastMoveFromGame(game);
+
+        // After updating all pieces, apply the last move highlight
+        this.highlightLastMove();
+    }
+
+    // New method to update lastMove from game's move history
+    updateLastMoveFromGame(game) {
+        // Check if game has moveHistory and at least one move
+        if (game && game.moveHistory && game.moveHistory.length > 0) {
+            // Get the last move from game history
+            const lastGameMove = game.moveHistory[game.moveHistory.length - 1];
+            
+            if (lastGameMove) {
+                // Convert chess.js move format to our board format
+                if (lastGameMove.from && lastGameMove.to) {
+                    // Extract row and column from algebraic notation
+                    const fromObj = this.objectPosition(lastGameMove.from);
+                    const toObj = this.objectPosition(lastGameMove.to);
+                    
+                    // Update the last move
+                    this.lastMove = {
+                        from: { row: fromObj.row, col: fromObj.col },
+                        to: { row: toObj.row, col: toObj.col }
+                    };
+                }
+            }
+        }
+    }
+    
+    // Helper function to convert algebraic notation to row/col object
+    objectPosition(algebraic) {
+        if (!algebraic || algebraic.length !== 2) return null;
+        
+        const col = algebraic.charCodeAt(0) - 97; // 'a' -> 0, 'b' -> 1, etc.
+        const row = 8 - parseInt(algebraic[1]);  // '1' -> 7, '2' -> 6, etc.
+        return { row, col };
     }
 
     // Helper function to convert board position to algebraic notation
@@ -465,6 +522,12 @@ class ChessBoard {
                 const from = { row: actualFromRow, col: actualFromCol };
                 const to = { row: actualRow, col: actualCol };
 
+                // Update last move for highlighting
+                this.lastMove = {
+                    from: { row: from.row, col: from.col },
+                    to: { row: to.row, col: to.col }
+                };
+
                 // Check if this is a pawn promotion
                 if (game.isPromotion && game.isPromotion(from, to)) {
                     this.showPromotionDialog(from, to, game.getCurrentPlayer());
@@ -568,6 +631,10 @@ class ChessBoard {
         const checkedSquares = Array.from(this.container.querySelectorAll('.square.check'))
             .map(square => square.getAttribute('data-row') + '-' + square.getAttribute('data-col'));
         
+        // Store squares that have the last-move class
+        const lastMoveSquares = Array.from(this.container.querySelectorAll('.square.last-move'))
+            .map(square => square.getAttribute('data-row') + '-' + square.getAttribute('data-col'));
+        
         // Clear selection highlights
         const squares = this.container.querySelectorAll('.square');
         squares.forEach(square => {
@@ -578,13 +645,53 @@ class ChessBoard {
             if (!checkedSquares.includes(squareId)) {
                 square.classList.remove('check');
             }
+            
+            // Only remove last-move class if we're not restoring it
+            if (!lastMoveSquares.includes(squareId)) {
+                square.classList.remove('last-move');
+            }
         });
+    }
+
+    // Add a new method to highlight the last move
+    highlightLastMove() {
+        // Clear previous last move highlights
+        const lastMoveSquares = this.container.querySelectorAll('.square.last-move');
+        lastMoveSquares.forEach(square => square.classList.remove('last-move'));
+        
+        // If there's no last move, exit
+        if (!this.lastMove.from || !this.lastMove.to) return;
+        
+        // Get the visual positions accounting for board flipping
+        const fromRow = this.flipped ? 7 - this.lastMove.from.row : this.lastMove.from.row;
+        const fromCol = this.flipped ? 7 - this.lastMove.from.col : this.lastMove.from.col;
+        const toRow = this.flipped ? 7 - this.lastMove.to.row : this.lastMove.to.row;
+        const toCol = this.flipped ? 7 - this.lastMove.to.col : this.lastMove.to.col;
+        
+        // Find and highlight the source square
+        const fromSquare = this.container.querySelector(
+            `.square[data-row="${fromRow}"][data-col="${fromCol}"]`
+        );
+        if (fromSquare) fromSquare.classList.add('last-move');
+        
+        // Find and highlight the destination square
+        const toSquare = this.container.querySelector(
+            `.square[data-row="${toRow}"][data-col="${toCol}"]`
+        );
+        if (toSquare) toSquare.classList.add('last-move');
     }
 
     // Flip the board perspective
     flipBoard(game) {
+        // Store the current last move before flipping
+        const currentLastMove = this.lastMove;
+        
         this.flipped = !this.flipped;
         this.init(game, this.flipped);
+        
+        // Restore the last move after flipping
+        this.lastMove = currentLastMove;
+        this.highlightLastMove();
     }
 
     // Register callbacks for board events
