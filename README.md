@@ -1,8 +1,6 @@
-# Chess App
+# Vanilla Chess
 
 A modern web-based chess application built with vanilla JavaScript that allows users to play chess against an AI opponent with adjustable difficulty levels.
-
-![Chess App Screenshot](img/chess-app-screenshot.png)
 
 ## Features
 

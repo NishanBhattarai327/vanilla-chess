@@ -6,15 +6,17 @@ The Chess App is a web-based chess game built using vanilla JavaScript with an o
 ### Main Features
 - Play against an AI bot with three difficulty levels (easy, medium, hard)
 - Responsive chessboard with integrated rank and file notation
+- Intuitive drag-and-drop piece movement with fallback click-based moves
 - Chess timer with configurable time formats
 - Game history storage and interactive replay functionality
-- Visual indicators for selected pieces and valid moves
+- Visual indicators for selected pieces, valid moves, and last moves
 - Player color selection (white or black)
 - Sound effects for moves, captures, checks, and other game events
 - Volume control and mute functionality
 - Customizable sound themes (standard, classic, modern)
 - Pawn promotion dialog for selecting promotion pieces
 - Visual check indicators when a king is in check
+- Mobile-friendly responsive design
 
 ## 2. System Architecture
 
@@ -32,12 +34,14 @@ The application follows an object-oriented architecture with several core compon
 
 2. **ChessBoard** (board.js)
    - Handles the visual representation and rendering of the chess board
-   - Manages user interactions (selecting pieces, making moves)
-   - Shows visual indicators for selected pieces and valid moves
+   - Manages user interactions via both click and drag-and-drop interfaces
+   - Shows visual indicators for selected pieces, valid moves, and last move
    - Provides integrated rank and file notation
    - Supports board flipping when playing as black
    - Displays promotion piece selection dialog when needed
    - Highlights kings that are in check
+   - Implements smooth drag-and-drop functionality with mouse and touch support
+   - Provides visual cues like hover effects and highlighting
 
 3. **ChessBot** (bot.js)
    - Implements the AI opponent with three difficulty levels
@@ -45,6 +49,7 @@ The application follows an object-oriented architecture with several core compon
      - Easy: Random moves
      - Medium: Prioritizes captures and checks
      - Hard: Uses position evaluation with piece value assessment, center control bonuses, and tactical considerations
+   - Simulates "thinking" time appropriate to difficulty level
 
 4. **ChessTimer** (timer.js)
    - Implements chess clock functionality with configurable time formats
@@ -82,11 +87,21 @@ The application follows an object-oriented architecture with several core compon
 
 ### Component Interaction Diagram
 ```
-User → ChessBoard → ChessGame → ChessBot
-                  ↕           ↕
-                ChessTimer → GameStorage
-                  ↕
-              ChessSoundManager
+                  ┌───────────────┐
+User ─────────────► ChessBoard    ◄────────────────┐
+                  └───────┬───────┘                │
+                          │                        │
+                          ▼                        │
+                  ┌───────────────┐        ┌───────────────┐
+                  │   ChessGame   ◄────────►  ChessSound   │
+                  └───────┬───────┘        └───────────────┘
+                          │
+          ┌───────────────┼───────────────┐
+          │               │               │
+          ▼               ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   ChessBot   │ │  ChessTimer  │ │ GameStorage  │
+└──────────────┘ └──────────────┘ └──────────────┘
 ```
 
 ## 3. File Structure
@@ -116,8 +131,12 @@ chess-app/
 │   └── sound.js                # Advanced sound effects management
 ├── index.html                  # Main HTML structure
 ├── README.md                   # Project introduction
+├── TODO.md                     # Planned features and improvements
 ├── docs/                       # Documentation directory
-│   └── technical-documentation.md  # This comprehensive documentation
+│   ├── technical-documentation.md  # This comprehensive documentation
+│   ├── move-execution.md       # How chess moves are processed
+│   ├── piece-selection.md      # Visual feedback for chess pieces
+│   └── drag-and-drop.md        # Drag-and-drop implementation details
 └── .vscode/                    # VSCode configuration
 ```
 
@@ -126,7 +145,7 @@ chess-app/
 - **index.html**: Entry point that sets up the HTML structure, includes chess.js library, and loads application scripts.
 - **app.js**: Initializes components, connects them together, and handles game and replay functionality.
 - **game.js**: Core game logic with position conversion utilities, move validation, and game state management.
-- **board.js**: Visual representation with piece placement, move highlighting, and user interaction handling.
+- **board.js**: Visual representation with piece placement, move highlighting, and user interaction handling through both click and drag-and-drop interfaces.
 - **bot.js**: AI opponent with three difficulty levels and sophisticated move evaluation for harder levels.
 - **timer.js**: Chess clock implementation with time tracking, formatting, and player switching.
 - **storage.js**: Game history management using localStorage with PGN and move history storage.
@@ -149,16 +168,30 @@ chess-app/
    - If player is black, board is flipped and bot makes first move
 
 ### Player Move Flow
-1. User clicks on a piece of their color
-2. Valid moves are highlighted on the board
-3. User clicks on a destination square
-4. ChessBoard sends move to ChessGame
-5. ChessGame validates and executes the move using chess.js
-6. Appropriate sound effect is played based on move type (regular move, capture, check, etc.)
-7. Board is updated with new position
-8. Timer switches to opponent
-9. Game checks for end conditions
-10. Bot calculates and makes its move
+1. Player can move pieces using two methods:
+   - **Click-based**: Click on a piece, then click on a destination square
+   - **Drag-and-drop**: Drag a piece directly to its destination square
+
+2. For click-based moves:
+   - User clicks on a piece of their color
+   - Valid moves are highlighted on the board
+   - User clicks on a destination square
+   - ChessBoard sends move to ChessGame
+
+3. For drag-and-drop moves:
+   - User presses down on a piece of their color
+   - Valid moves are highlighted on the board
+   - User drags the piece (a visual representation follows the cursor/finger)
+   - User releases the piece over a destination square
+   - ChessBoard sends move to ChessGame
+
+4. After move validation:
+   - ChessGame validates and executes the move using chess.js
+   - Appropriate sound effect is played based on move type
+   - Board is updated with new position and last move highlight
+   - Timer switches to opponent
+   - Game checks for end conditions
+   - Bot calculates and makes its move if applicable
 
 ### Bot Move Flow
 1. ChessBot.getMove() is called with current game state
@@ -168,7 +201,7 @@ chess-app/
    - Hard: Evaluates positions with piece values, center control, and check bonuses
 3. Bot "thinks" for a delay period based on level (500ms for easy, 1000ms for medium, 2000ms for hard)
 4. Move is executed and appropriate sound is played
-5. Board is updated with new position
+5. Board is updated with new position and last move highlight
 6. Timer switches back to player
 7. Game checks for end conditions
 
@@ -198,6 +231,18 @@ chess-app/
    - Standard, Classic, and Modern built-in themes
    - Support for custom theme creation
    - API for adding new themes at runtime
+   - Volume control and mute functionality
+
+### Responsive Design
+1. **Desktop Layout**:
+   - Sidebar with controls next to the chessboard
+   - Full-size chessboard with clear piece rendering
+
+2. **Mobile Layout**:
+   - Stacked layout with board above controls
+   - Appropriately sized touch targets for mobile interaction
+   - Drag-and-drop optimized for touch events
+   - Responsive modals and dialogs
 
 ### Game End Conditions
 1. **Checkmate**: A player's king is in check and has no legal moves
@@ -218,7 +263,6 @@ chess-app/
 5. Sound effects are played during replay to match the move types
 6. Replay status shows current move number and total moves
 
-
 ## 5. Helpful Resources
 
 ### Libraries and Documentation
@@ -237,6 +281,7 @@ chess-app/
 - [JavaScript OOP](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/Object-oriented_programming) - Object-oriented programming in JavaScript
 - [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) - For future modularization
 - [CSS Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout) - Used for the chess board layout
+- [Touch Events](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events) - For mobile interaction
 
 ### AI and Chess Programming
 - [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page) - Resources for chess programming and AI
