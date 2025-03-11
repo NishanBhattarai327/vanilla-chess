@@ -109,6 +109,9 @@ class ChessBoard {
                 }
             }
         }
+        
+        // Highlight king in check after all pieces are placed
+        this.highlightKingInCheck(game);
     }
 
     // Helper function to convert board position to algebraic notation
@@ -132,7 +135,58 @@ class ChessBoard {
             const pieceType = (piece.color === 'white' ? 'w' : 'b') + piece.type.charAt(0).toUpperCase();
             pieceElement.style.backgroundImage = `url('${this.pieceImages[pieceType]}')`;
             
+            // Add data attributes for easier identification
+            pieceElement.setAttribute('data-piece-type', piece.type);
+            pieceElement.setAttribute('data-piece-color', piece.color);
+            
             square.appendChild(pieceElement);
+        }
+    }
+
+    // Fixed method to highlight king in check
+    highlightKingInCheck(game) {
+        // Return early only if no game object is provided
+        if (!game) return;
+        
+        // First, clear any existing check highlights
+        const checkSquares = this.container.querySelectorAll('.square.check');
+        checkSquares.forEach(square => square.classList.remove('check'));
+        
+        let isInCheck = false;
+        let kingColor = null;
+        
+        // Determine if there's a check and which king is in check
+        if (game.chess) {
+            isInCheck = game.chess.in_check();
+            kingColor = game.chess.turn() === 'w' ? 'white' : 'black';
+        } else if (typeof game.isCheck === 'function') {
+            isInCheck = game.isCheck();
+            kingColor = game.getCurrentPlayer();
+        } else {
+            // If we can't determine check status, exit
+            return;
+        }
+        
+        if (isInCheck && kingColor) {
+            // Find the king that's in check using the correct selector
+            const kingElements = this.container.querySelectorAll(
+                `.piece[data-piece-type="k"][data-piece-color="${kingColor}"]`
+            );
+            
+            if (kingElements.length === 0) {
+                console.warn(`No king found with color: ${kingColor}`);
+                return;
+            }
+            
+            kingElements.forEach(kingElement => {
+                // Add the check class to the square containing the king
+                const square = kingElement.closest('.square');
+                if (square) {
+                    square.classList.add('check');
+                } else {
+                    console.warn("King element found but no parent square");
+                }
+            });
         }
     }
 
@@ -167,7 +221,7 @@ class ChessBoard {
             if (isValidMove) {
                 const from = { row: actualFromRow, col: actualFromCol };
                 const to = { row: actualRow, col: actualCol };
-                
+
                 // Check if this is a pawn promotion
                 if (game.isPromotion(from, to)) {
                     this.showPromotionDialog(from, to, game.getCurrentPlayer());
@@ -180,6 +234,9 @@ class ChessBoard {
                 
                 this.clearHighlights();
                 this.selectedSquare = null;
+                
+                // Re-highlight the king if in check
+                this.highlightKingInCheck(game);
             } else {
                 // Select a new piece if it's of the current player's color
                 const piece = game.getPiece({ row: actualRow, col: actualCol });
@@ -264,9 +321,20 @@ class ChessBoard {
 
     // Clear all highlights from the board
     clearHighlights() {
+        // Store squares that have the check class
+        const checkedSquares = Array.from(this.container.querySelectorAll('.square.check'))
+            .map(square => square.getAttribute('data-row') + '-' + square.getAttribute('data-col'));
+        
+        // Clear selection highlights
         const squares = this.container.querySelectorAll('.square');
         squares.forEach(square => {
             square.classList.remove('selected', 'valid-move', 'valid-capture');
+            
+            // Only remove check class if we're not restoring it
+            const squareId = square.getAttribute('data-row') + '-' + square.getAttribute('data-col');
+            if (!checkedSquares.includes(squareId)) {
+                square.classList.remove('check');
+            }
         });
     }
 
@@ -280,4 +348,9 @@ class ChessBoard {
     on(event, callback) {
         this.callbacks[event] = callback;
     }
+}
+
+// Add CommonJS module exports for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { ChessBoard };
 }

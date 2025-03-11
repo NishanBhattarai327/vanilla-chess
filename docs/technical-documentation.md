@@ -1,4 +1,4 @@
-# Chess App Documentation
+# Chess App Technical Documentation
 
 ## 1. Project Overview
 The Chess App is a web-based chess game built using vanilla JavaScript with an object-oriented approach. It allows users to play chess against an AI bot with adjustable difficulty levels. The application features a responsive design, chess timer functionality, game history storage, sound effects, and interactive game replay.
@@ -14,6 +14,7 @@ The Chess App is a web-based chess game built using vanilla JavaScript with an o
 - Volume control and mute functionality
 - Customizable sound themes (standard, classic, modern)
 - Pawn promotion dialog for selecting promotion pieces
+- Visual check indicators when a king is in check
 
 ## 2. System Architecture
 
@@ -27,6 +28,7 @@ The application follows an object-oriented architecture with several core compon
    - Uses chess.js library for rules and validation
    - Handles position conversion between algebraic notation and row/column coordinates
    - Implements pawn promotion logic
+   - Maintains game move history
 
 2. **ChessBoard** (board.js)
    - Handles the visual representation and rendering of the chess board
@@ -35,6 +37,7 @@ The application follows an object-oriented architecture with several core compon
    - Provides integrated rank and file notation
    - Supports board flipping when playing as black
    - Displays promotion piece selection dialog when needed
+   - Highlights kings that are in check
 
 3. **ChessBot** (bot.js)
    - Implements the AI opponent with three difficulty levels
@@ -48,6 +51,7 @@ The application follows an object-oriented architecture with several core compon
    - Manages time for both players
    - Handles time-based game termination
    - Supports time display formatting
+   - Switches active timer when turns change
 
 5. **GameStorage** (storage.js)
    - Manages persistent storage of game history using localStorage
@@ -66,12 +70,15 @@ The application follows an object-oriented architecture with several core compon
      - Special moves (castling, promotion) with distinctive sounds
    - Features volume control, mute functionality, and sound themes
    - Includes sophisticated audio synthesis with ADSR envelopes and filters for realistic wooden chess sounds
+   - Supports multiple sound themes including standard, classic, and modern
+   - Allows for custom theme creation via API
 
 7. **Application Initialization** (app.js)
    - Initializes and connects all components
    - Sets up event handlers and UI interactions
    - Manages game modals and UI updates
    - Handles game replay functionality
+   - Controls sound settings and themes
 
 ### Component Interaction Diagram
 ```
@@ -108,8 +115,9 @@ chess-app/
 │   ├── timer.js                # Chess clock functionality
 │   └── sound.js                # Advanced sound effects management
 ├── index.html                  # Main HTML structure
-├── documentation.md            # This comprehensive documentation
-├── TODO.md                     # This is todo list
+├── README.md                   # Project introduction
+├── docs/                       # Documentation directory
+│   └── technical-documentation.md  # This comprehensive documentation
 └── .vscode/                    # VSCode configuration
 ```
 

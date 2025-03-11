@@ -49,3 +49,11 @@ temp/
 
 # Local development files
 *.local
+
+# Test scripts
+**/test-scripts/
+*.test.js
+test/
+
+# npm packages
+package*.json

@@ -2,9 +2,9 @@ class ChessBot {
     constructor(level = 'medium') {
         this.level = level;
         this.thinkingTime = {
-            'easy': 0,
-            'medium': 0,
-            'hard': 0
+            'easy': 1000,
+            'medium': 2000,
+            'hard': 1000
         };
     }
 
