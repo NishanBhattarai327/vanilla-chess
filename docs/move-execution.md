@@ -1,10 +1,10 @@
-# Move Execution Process in Chess App
+# Move Execution Process in Vanilla Chess
 
 This document explains how chess moves are validated, executed, and processed within the application.
 
 ## Move Interaction Methods
 
-The Chess App supports two primary ways for users to make moves:
+The Vanilla Chess supports two primary ways for users to make moves:
 
 1. **Click-Based Selection** - Traditional two-step process of clicking a piece and then clicking a destination
 2. **Drag-and-Drop** - Direct manipulation by dragging pieces to their intended destinations
@@ -222,7 +222,7 @@ After a move is executed:
 
 ## Last Move Highlighting
 
-A special feature of the Chess App is highlighting the last move played:
+A special feature of the Vanilla Chess is highlighting the last move played:
 
 1. **Tracking Last Move**:
    - Each time a move is made, the `lastMove` property in the ChessBoard class is updated

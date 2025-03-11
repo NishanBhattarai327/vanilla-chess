@@ -1,4 +1,4 @@
-# Drag-and-Drop Functionality in Chess App
+# Drag-and-Drop Functionality in Vanilla Chess
 
 This document explains the implementation and behavior of the drag-and-drop functionality for moving chess pieces in the application.
 

@@ -1,6 +1,6 @@
 # Game Replay System
 
-This document explains the game replay functionality in the Chess App, which allows users to review completed games move by move.
+This document explains the game replay functionality in the Vanilla Chess, which allows users to review completed games move by move.
 
 ## Overview
 

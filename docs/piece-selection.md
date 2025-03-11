@@ -1,4 +1,4 @@
-# Piece Selection and Highlighting in Chess App
+# Piece Selection and Highlighting in Vanilla Chess
 
 This document explains the visual feedback and interaction process when a user selects chess pieces in the application.
 

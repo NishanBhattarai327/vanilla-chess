@@ -1,4 +1,4 @@
-# Chess App TODO List
+# Vanilla Chess TODO List
 
 ## Feature Updates
 

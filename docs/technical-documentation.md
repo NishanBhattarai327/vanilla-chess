@@ -1,7 +1,7 @@
-# Chess App Technical Documentation
+# Vanilla Chess Technical Documentation
 
 ## 1. Project Overview
-The Chess App is a web-based chess game built using vanilla JavaScript with an object-oriented approach. It allows users to play chess against an AI bot with adjustable difficulty levels. The application features a responsive design, chess timer functionality, game history storage, sound effects, and interactive game replay.
+The Vanilla Chess is a web-based chess game built using vanilla JavaScript with an object-oriented approach. It allows users to play chess against an AI bot with adjustable difficulty levels. The application features a responsive design, chess timer functionality, game history storage, sound effects, and interactive game replay.
 
 ### Main Features
 - Play against an AI bot with three difficulty levels (easy, medium, hard)
