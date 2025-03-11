@@ -1,6 +1,8 @@
 # Vanilla Chess
 
 A modern web-based chess application built with vanilla JavaScript that allows users to play chess against an AI opponent with adjustable difficulty levels.
+This project was developed with the assistance of GitHub Copilot, leveraging AI to enhance the development process and code quality.
+
 
 ## Features
 
