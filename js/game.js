@@ -309,6 +309,18 @@ class ChessGame {
         const winner = this.playerColor === 'white' ? 'black' : 'white';
         this.result = `${winner} wins by resignation`;
         
+        // Make sure we explicitly save the game with proper move history
+        if (this.storage) {
+            // Store game state before saving
+            const gameData = {
+                result: this.result,
+                moveHistory: this.moveHistory,
+                pgn: this.chess.pgn(),
+                playerColor: this.playerColor
+            };
+            this.storage.saveGame(gameData);
+        }
+        
         if (this.callbacks.onGameEnd) {
             this.callbacks.onGameEnd(this.result);
         }
@@ -334,15 +346,16 @@ class ChessGame {
         return this.playerColor;
     }
     
-    // When saving the game, ensure we include player color
+    // When saving the game, ensure we include player color and all moves
     saveGameState() {
         if (this.callbacks.onSaveGame) {
-            this.callbacks.onSaveGame({
+            const gameData = {
                 result: this.result,
-                moves: this.moveHistory,
+                moveHistory: this.moveHistory || [], // Ensure moveHistory is an array even if undefined
                 pgn: this.chess.pgn(),
                 playerColor: this.playerColor
-            });
+            };
+            this.callbacks.onSaveGame(gameData);
         }
     }
 }

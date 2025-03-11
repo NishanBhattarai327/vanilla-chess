@@ -15,30 +15,11 @@
     </header>
 
     <main>
-        <div class="game-container">
-            <div class="game-sidebar">
-                <div class="game-info">
-                    <div class="player-info player-top">
-                        <div class="player-name" id="opponent-name">Bot</div>
-                        <div class="player-time" id="opponent-time">10:00</div>
-                    </div>
-
-                    <div class="game-controls">
-                        <button id="new-game-btn">New Game</button>
-                        <button id="undo-btn">Undo Move</button>
-                        <button id="resign-btn">Resign</button>
-                    </div>
-
-                    <div class="game-status" id="game-status">White to move</div>
-
-                    <div class="player-info player-bottom">
-                        <div class="player-name" id="player-name">Player</div>
-                        <div class="player-time" id="player-time">10:00</div>
-                    </div>
-                </div>
-
-                <div class="settings-panel">
-                    <h3>Game Settings</h3>
+        <!-- Settings Page -->
+        <div id="settings-page" class="page active">
+            <div class="settings-container">
+                <h2>Game Settings</h2>
+                <div class="settings-form">
                     <div class="setting-group">
                         <label for="bot-level">Bot Level:</label>
                         <select id="bot-level">
@@ -76,18 +57,60 @@
                     </div>
 
                     <div class="sound-controls">
-                        <button id="mute-btn"><i class="fas fa-volume-up"></i></button>
-                        <input type="range" id="volume-slider" min="0" max="100" value="50">
+                        <button id="settings-mute-btn"><i class="fas fa-volume-up"></i></button>
+                        <input type="range" id="settings-volume-slider" min="0" max="100" value="50">
+                    </div>
+
+                    <button id="start-game-btn" class="primary-btn">Start Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Page -->
+        <div id="game-page" class="page">
+            <div class="game-container">
+                <div class="game-sidebar">
+                    <div class="game-info">
+                        <div class="player-info player-top">
+                            <div class="player-name" id="opponent-name">Bot</div>
+                            <div class="player-time" id="opponent-time">10:00</div>
+                        </div>
+
+                        <div class="game-controls">
+                            <button id="back-to-settings-btn">New Game</button>
+                            <button id="undo-btn">Undo Move</button>
+                            <button id="flip-board-btn">Flip Board</button>
+                            <button id="resign-btn">Resign</button>
+                        </div>
+
+                        <div class="game-status" id="game-status">White to move</div>
+
+                        <div class="player-info player-bottom">
+                            <div class="player-name" id="player-name">Player</div>
+                            <div class="player-time" id="player-time">10:00</div>
+                        </div>
+                    </div>
+
+                    <div class="sound-panel">
+                        <div class="sound-controls">
+                            <button id="mute-btn"><i class="fas fa-volume-up"></i></button>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                            <select id="sound-theme-game">
+                                <option value="standard" selected>Standard</option>
+                                <option value="classic">Classic</option>
+                                <option value="modern">Modern</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="move-history">
+                        <h3>Move History</h3>
+                        <div id="moves-list" class="moves-list"></div>
                     </div>
                 </div>
 
-                <div class="move-history">
-                    <h3>Move History</h3>
-                    <div id="moves-list" class="moves-list"></div>
-                </div>
+                <div id="board-container" class="board-container"></div>
             </div>
-
-            <div id="board-container" class="board-container"></div>
         </div>
     </main>
 

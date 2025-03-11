@@ -705,6 +705,8 @@ class ChessBoard {
 
     // Flip the board perspective
     flipBoard(game) {
+        if (!game) return; // Added null check to ensure game exists
+        
         // Store the current last move before flipping
         const currentLastMove = this.lastMove;
         
@@ -714,6 +716,9 @@ class ChessBoard {
         // Restore the last move after flipping
         this.lastMove = currentLastMove;
         this.highlightLastMove();
+        
+        // Add console log for debugging
+        console.log(`Board flipped, now flipped state is: ${this.flipped}`);
     }
 
     // Register callbacks for board events
