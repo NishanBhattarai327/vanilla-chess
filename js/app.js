@@ -116,8 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Register callbacks
     game.on('onStatusUpdate', updateStatus);
     game.on('onGameEnd', showGameEndModal);
-    // Register callback for move history updates
     game.on('onMovesUpdate', updateMovesList);
+    game.on('onSaveGame', (gameData) => storage.saveGame(gameData));
     
     // Function implementations
     function startNewGame() {
@@ -176,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.gameResultText.textContent = 'Game Over';
         elements.gameResultDetails.textContent = result;
         elements.gameEndModal.style.display = 'block';
+        
+        // Save final game state including player color
+        game.saveGameState();
     }
     
     // Function to display the game replay modal
@@ -201,7 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Create a new board for replay visualization
             replayBoardInstance = new ChessBoard('replay-board');
-            replayBoardInstance.init({chess: replayChess}, false);
+            // Use the player's color preference from the saved game to determine board orientation
+            const shouldFlip = lastGame.playerColor === 'black';
+            replayBoardInstance.init({chess: replayChess}, shouldFlip);
             updateReplayBoard();
         }
     }

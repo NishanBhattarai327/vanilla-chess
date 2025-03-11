@@ -328,4 +328,21 @@ class ChessGame {
     objectPosition(algebraic) {
         return this.positions.toObject(algebraic);
     }
+
+    // New method to get the player's color
+    getPlayerColor() {
+        return this.playerColor;
+    }
+    
+    // When saving the game, ensure we include player color
+    saveGameState() {
+        if (this.callbacks.onSaveGame) {
+            this.callbacks.onSaveGame({
+                result: this.result,
+                moves: this.moveHistory,
+                pgn: this.chess.pgn(),
+                playerColor: this.playerColor
+            });
+        }
+    }
 }

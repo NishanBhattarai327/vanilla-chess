@@ -11,7 +11,8 @@ class GameStorage {
             date: new Date().toISOString(),
             pgn: game.chess.pgn(),
             result: game.result,
-            moves: game.moveHistory
+            moves: game.moveHistory,
+            playerColor: game.playerColor  // Make sure we save the player color
         };
         
         gameHistory.push(gameData);

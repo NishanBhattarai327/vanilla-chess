@@ -57,6 +57,9 @@ class ChessBoard {
             from: null,
             to: null
         };
+        
+        // Debug logging to verify flip state
+        console.log(`Board initialized with flipped: ${this.flipped}`);
     }
     
     // New method to set up drag and drop
@@ -291,41 +294,52 @@ class ChessBoard {
         this.mouseDownPosition = null;
     }
 
+    // Create squares for the chess board
     createSquares(squaresContainer) {
         const fragment = document.createDocumentFragment();
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                const actualRow = this.flipped ? 7 - row : row;
-                const actualCol = this.flipped ? 7 - col : col;
+        
+        // Always create the grid in the same visual order (0-7 for rows and cols)
+        for (let visualRow = 0; visualRow < 8; visualRow++) {
+            for (let visualCol = 0; visualCol < 8; visualCol++) {
+                // Convert visual coordinates to logical coordinates based on flip state
+                const actualRow = this.flipped ? 7 - visualRow : visualRow;
+                const actualCol = this.flipped ? 7 - visualCol : visualCol;
+                
+                // Determine square color based on logical coordinates
                 const squareColor = (actualRow + actualCol) % 2 === 0 ? 'white' : 'black';
                 const square = document.createElement('div');
                 
                 // Add rank number to the first column
-                if (col === 0) {
+                if (visualCol === 0) {
                     const rankIndicator = document.createElement('span');
                     rankIndicator.classList.add('rank-indicator');
-                    rankIndicator.textContent = (8 - actualRow).toString();
+                    // Always show ranks in ascending order from bottom to top (8 to 1)
+                    rankIndicator.textContent = this.flipped ? (visualRow + 1).toString() : (8 - visualRow).toString();
                     square.appendChild(rankIndicator);
                 }
+                
                 // Add file letter to the last row
-                if (row === 7) {
+                if (visualRow === 7) {
                     const fileIndicator = document.createElement('span');
                     fileIndicator.classList.add('file-indicator');
-                    fileIndicator.textContent = String.fromCharCode(97 + actualCol); // 'a' to 'h'
+                    // Always show files in ascending order from left to right (a to h)
+                    fileIndicator.textContent = this.flipped ? 
+                        String.fromCharCode(104 - visualCol) : // 'h' to 'a' when flipped
+                        String.fromCharCode(97 + visualCol);   // 'a' to 'h' when not flipped
                     square.appendChild(fileIndicator);
                 }
 
                 square.classList.add('square', squareColor);
-                square.setAttribute('data-row', actualRow);
-                square.setAttribute('data-col', actualCol);
+                // Store visual coordinates in data attributes for easier access
+                square.setAttribute('data-row', visualRow);
+                square.setAttribute('data-col', visualCol);
                 
-                // Use event delegation instead of individual listeners
                 fragment.appendChild(square);
             }
         }
         squaresContainer.appendChild(fragment);
         
-        // Update to pass the game reference to handleSquareClick
+        // Use event delegation for click handling
         squaresContainer.addEventListener('click', (e) => {
             const square = e.target.closest('.square');
             if (square) {
@@ -418,10 +432,12 @@ class ChessBoard {
     }
 
     // Place a piece on the board
-    placePiece(piece, row, col) {
-        const actualRow = this.flipped ? 7 - row : row;
-        const actualCol = this.flipped ? 7 - col : col;
-        const square = this.container.querySelector(`[data-row="${actualRow}"][data-col="${actualCol}"]`);
+    placePiece(piece, logicalRow, logicalCol) {
+        // Convert logical board coordinates to visual coordinates based on flip state
+        const visualRow = this.flipped ? 7 - logicalRow : logicalRow;
+        const visualCol = this.flipped ? 7 - logicalCol : logicalCol;
+        
+        const square = this.container.querySelector(`.square[data-row="${visualRow}"][data-col="${visualCol}"]`);
         
         if (square) {
             const pieceElement = document.createElement('div');
@@ -495,20 +511,26 @@ class ChessBoard {
         const square = event.target.closest('.square');
         if (!square) return;
         
-        const row = parseInt(square.getAttribute('data-row'));
-        const col = parseInt(square.getAttribute('data-col'));
-        const actualRow = this.flipped ? 7 - row : row;
-        const actualCol = this.flipped ? 7 - col : col;
+        // Get visual coordinates from the square
+        const visualRow = parseInt(square.getAttribute('data-row'));
+        const visualCol = parseInt(square.getAttribute('data-col'));
+        
+        // Convert to logical coordinates based on flip state
+        const logicalRow = this.flipped ? 7 - visualRow : visualRow;
+        const logicalCol = this.flipped ? 7 - visualCol : visualCol;
         
         // If a piece is already selected
         if (this.selectedSquare) {
-            const fromRow = parseInt(this.selectedSquare.getAttribute('data-row'));
-            const fromCol = parseInt(this.selectedSquare.getAttribute('data-col'));
-            const actualFromRow = this.flipped ? 7 - fromRow : fromRow;
-            const actualFromCol = this.flipped ? 7 - fromCol : fromCol;
+            // Get visual coordinates from the selected square
+            const visualFromRow = parseInt(this.selectedSquare.getAttribute('data-row'));
+            const visualFromCol = parseInt(this.selectedSquare.getAttribute('data-col'));
+            
+            // Convert to logical coordinates based on flip state
+            const logicalFromRow = this.flipped ? 7 - visualFromRow : visualFromRow;
+            const logicalFromCol = this.flipped ? 7 - visualFromCol : visualFromCol;
 
              // Check if the user clicked the same square that was already selected
-             if (row === fromRow && col === fromCol) {
+             if (visualRow === visualFromRow && visualCol === visualFromCol) {
                 this.clearHighlights();
                 this.selectedSquare = null;
                 return; // Exit the function to prevent further processing
@@ -516,11 +538,11 @@ class ChessBoard {
             
             // Check if the selected square is a valid move
             const isValidMove = this.validMoves.some(move => 
-                move.to.row === actualRow && move.to.col === actualCol);
+                move.to.row === logicalRow && move.to.col === logicalCol);
             
             if (isValidMove) {
-                const from = { row: actualFromRow, col: actualFromCol };
-                const to = { row: actualRow, col: actualCol };
+                const from = { row: logicalFromRow, col: logicalFromCol };
+                const to = { row: logicalRow, col: logicalCol };
 
                 // Update last move for highlighting
                 this.lastMove = {
@@ -545,7 +567,7 @@ class ChessBoard {
                 this.highlightKingInCheck(game);
             } else {
                 // Select a new piece if it's of the current player's color
-                const piece = game.getPiece({ row: actualRow, col: actualCol });
+                const piece = game.getPiece({ row: logicalRow, col: logicalCol });
                 if (piece && piece.color === game.getCurrentPlayer()) {
                     this.selectSquare(square, game);
                 } else {
@@ -555,7 +577,7 @@ class ChessBoard {
             }
         } else {
             // Select a piece if it's the current player's
-            const piece = game.getPiece({ row: actualRow, col: actualCol });
+            const piece = game.getPiece({ row: logicalRow, col: logicalCol });
             if (piece && piece.color === game.getCurrentPlayer()) {
                 this.selectSquare(square, game);
             }
@@ -662,21 +684,21 @@ class ChessBoard {
         // If there's no last move, exit
         if (!this.lastMove.from || !this.lastMove.to) return;
         
-        // Get the visual positions accounting for board flipping
-        const fromRow = this.flipped ? 7 - this.lastMove.from.row : this.lastMove.from.row;
-        const fromCol = this.flipped ? 7 - this.lastMove.from.col : this.lastMove.from.col;
-        const toRow = this.flipped ? 7 - this.lastMove.to.row : this.lastMove.to.row;
-        const toCol = this.flipped ? 7 - this.lastMove.to.col : this.lastMove.to.col;
+        // Convert logical positions to visual positions based on flip state
+        const visualFromRow = this.flipped ? 7 - this.lastMove.from.row : this.lastMove.from.row;
+        const visualFromCol = this.flipped ? 7 - this.lastMove.from.col : this.lastMove.from.col;
+        const visualToRow = this.flipped ? 7 - this.lastMove.to.row : this.lastMove.to.row;
+        const visualToCol = this.flipped ? 7 - this.lastMove.to.col : this.lastMove.to.col;
         
         // Find and highlight the source square
         const fromSquare = this.container.querySelector(
-            `.square[data-row="${fromRow}"][data-col="${fromCol}"]`
+            `.square[data-row="${visualFromRow}"][data-col="${visualFromCol}"]`
         );
         if (fromSquare) fromSquare.classList.add('last-move');
         
         // Find and highlight the destination square
         const toSquare = this.container.querySelector(
-            `.square[data-row="${toRow}"][data-col="${toCol}"]`
+            `.square[data-row="${visualToRow}"][data-col="${visualToCol}"]`
         );
         if (toSquare) toSquare.classList.add('last-move');
     }
