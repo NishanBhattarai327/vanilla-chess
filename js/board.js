@@ -11,7 +11,17 @@ class ChessBoard {
         };
         this.callbacks = {};
         this.validMoves = [];
-        this.gameRef = null; // Add this line to store a reference to the game
+        this.gameRef = null;
+        
+        // New properties for drag and drop
+        this.isDragging = false;
+        this.draggedPiece = null;
+        this.dragStartPosition = null;
+        
+        // Add new properties for distinguishing clicks from drags
+        this.mouseDownPosition = null;
+        this.isPotentialDrag = false;
+        this.dragThreshold = 5; // Minimum pixels to move before starting drag
     }
 
     // Initialize the board with pieces
@@ -32,6 +42,235 @@ class ChessBoard {
         
         this.createSquares(squaresContainer);
         this.updateBoard(game);
+        
+        // Add drag and drop event listeners
+        this.setupDragAndDrop();
+    }
+    
+    // New method to set up drag and drop
+    setupDragAndDrop() {
+        const squaresContainer = this.container.querySelector('.squares-container');
+        
+        // Mouse events for desktop
+        squaresContainer.addEventListener('mousedown', this.handleDragStart.bind(this));
+        document.addEventListener('mousemove', this.handleDragMove.bind(this));
+        document.addEventListener('mouseup', this.handleDragEnd.bind(this));
+        
+        // Touch events for mobile devices
+        squaresContainer.addEventListener('touchstart', this.handleDragStart.bind(this), { passive: false });
+        document.addEventListener('touchmove', this.handleDragMove.bind(this), { passive: false });
+        document.addEventListener('touchend', this.handleDragEnd.bind(this));
+        
+        // Prevent default drag behavior of images
+        squaresContainer.addEventListener('dragstart', (e) => e.preventDefault());
+    }
+    
+    // Handle the start of a drag operation
+    handleDragStart(event) {
+        // Don't start another drag if already dragging
+        if (this.isDragging) return;
+        
+        // Get the mouse/touch position
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        
+        // Find the piece that was clicked
+        const element = document.elementFromPoint(clientX, clientY);
+        const pieceElement = element.closest('.piece');
+        const square = element.closest('.square');
+        
+        if (!pieceElement || !square) return;
+        
+        // Check if this piece belongs to the current player
+        const row = parseInt(square.getAttribute('data-row'));
+        const col = parseInt(square.getAttribute('data-col'));
+        const actualRow = this.flipped ? 7 - row : row;
+        const actualCol = this.flipped ? 7 - col : col;
+        const piece = this.gameRef.getPiece({ row: actualRow, col: actualCol });
+        
+        if (!piece || piece.color !== this.gameRef.getCurrentPlayer()) return;
+        
+        // Prevent default behavior to avoid text selection, etc.
+        event.preventDefault();
+        
+        // Instead of immediately starting drag, mark as potential drag
+        this.isPotentialDrag = true;
+        this.mouseDownPosition = { x: clientX, y: clientY };
+        
+        // Store piece and position information for later use
+        this.draggedPiece = pieceElement;
+        this.dragStartPosition = { row: actualRow, col: actualCol };
+        
+        // For touch devices, select the square immediately to show valid moves
+        // This gives better feedback on mobile without waiting for movement
+        if (event.touches) {
+            this.selectSquare(square, this.gameRef);
+        }
+    }
+    
+    // Create a visual element for the dragged piece
+    createDragVisual(pieceElement, clientX, clientY) {
+        // Remove any existing drag visual
+        const existingVisual = document.getElementById('drag-piece-visual');
+        if (existingVisual) existingVisual.remove();
+        
+        // Get the actual dimensions of the original piece for consistency
+        const originalRect = pieceElement.getBoundingClientRect();
+        const pieceWidth = originalRect.width;
+        const pieceHeight = originalRect.height;
+        
+        // Create a clone of the piece element
+        const dragVisual = document.createElement('div');
+        dragVisual.id = 'drag-piece-visual';
+        dragVisual.className = 'piece dragging';
+        dragVisual.style.backgroundImage = pieceElement.style.backgroundImage;
+        dragVisual.style.position = 'fixed';
+        dragVisual.style.zIndex = '1000';
+        dragVisual.style.pointerEvents = 'none'; // Prevent the clone from interfering with events
+        
+        // Ensure background styling is consistent
+        dragVisual.style.backgroundSize = 'contain';
+        dragVisual.style.backgroundPosition = 'center center';
+        dragVisual.style.backgroundRepeat = 'no-repeat';
+        
+        // Set size based on original piece dimensions
+        dragVisual.style.width = `${pieceWidth}px`;
+        dragVisual.style.height = `${pieceHeight}px`;
+        dragVisual.style.transform = 'translate(-50%, -50%)'; // Center at cursor
+        
+        // Position the visual at the cursor
+        dragVisual.style.left = `${clientX}px`;
+        dragVisual.style.top = `${clientY}px`;
+        
+        // Add it to the document body
+        document.body.appendChild(dragVisual);
+    }
+    
+    // Handle the dragging movement
+    handleDragMove(event) {
+        // Skip if not a potential or active drag
+        if (!this.isPotentialDrag && !this.isDragging) return;
+        
+        // Get the mouse/touch position
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        
+        // If we're in potential drag state, check if movement exceeds threshold
+        if (this.isPotentialDrag && !this.isDragging) {
+            const deltaX = Math.abs(clientX - this.mouseDownPosition.x);
+            const deltaY = Math.abs(clientY - this.mouseDownPosition.y);
+            
+            // If movement is significant, start actual dragging
+            if (deltaX > this.dragThreshold || deltaY > this.dragThreshold) {
+                this.startDragging(clientX, clientY);
+            } else {
+                // Not enough movement yet, just return
+                return;
+            }
+        }
+        
+        // Prevent default to avoid scrolling on mobile
+        event.preventDefault();
+        
+        // Update the position of the drag visual
+        const dragVisual = document.getElementById('drag-piece-visual');
+        if (dragVisual) {
+            dragVisual.style.left = `${clientX}px`;
+            dragVisual.style.top = `${clientY}px`;
+        }
+    }
+    
+    // New method to actually start dragging
+    startDragging(clientX, clientY) {
+        // Find the square of the dragged piece
+        const pieceSquare = this.draggedPiece.closest('.square');
+        
+        // Change state from potential to active drag
+        this.isDragging = true;
+        this.isPotentialDrag = false;
+        
+        // Select the square to show valid moves (if not already selected)
+        this.selectSquare(pieceSquare, this.gameRef);
+        
+        // Create a visual representation of the dragged piece
+        this.createDragVisual(this.draggedPiece, clientX, clientY);
+        
+        // Hide the original piece while dragging (reduce opacity instead of full hide)
+        this.draggedPiece.style.opacity = '0.3';
+    }
+    
+    // Handle the end of a drag operation
+    handleDragEnd(event) {
+        // If we're in potential drag state but not actual dragging,
+        // this is a click not a drag - ignore and let click handler take care of it
+        if (this.isPotentialDrag && !this.isDragging) {
+            this.resetDragState();
+            return;
+        }
+        
+        // If not dragging, just exit
+        if (!this.isDragging) return;
+        
+        // Get the mouse/touch position
+        const clientX = event.changedTouches ? event.changedTouches[0].clientX : event.clientX;
+        const clientY = event.changedTouches ? event.changedTouches[0].clientY : event.clientY;
+        
+        // Restore the original piece's opacity
+        if (this.draggedPiece) {
+            this.draggedPiece.style.opacity = '1';
+        }
+        
+        // Remove the drag visual
+        const dragVisual = document.getElementById('drag-piece-visual');
+        if (dragVisual) {
+            dragVisual.remove();
+        }
+        
+        // Find the target square
+        const targetElement = document.elementFromPoint(clientX, clientY);
+        const targetSquare = targetElement ? targetElement.closest('.square') : null;
+        
+        if (targetSquare) {
+            const targetRow = parseInt(targetSquare.getAttribute('data-row'));
+            const targetCol = parseInt(targetSquare.getAttribute('data-col'));
+            const actualTargetRow = this.flipped ? 7 - targetRow : targetRow;
+            const actualTargetCol = this.flipped ? 7 - targetCol : targetCol;
+            
+            // Check if the drop target is a valid move
+            const isValidMove = this.validMoves.some(move => 
+                move.to.row === actualTargetRow && move.to.col === actualTargetCol);
+            
+            if (isValidMove) {
+                const from = this.dragStartPosition;
+                const to = { row: actualTargetRow, col: actualTargetCol };
+                
+                // Check for pawn promotion
+                if (this.gameRef.isPromotion && this.gameRef.isPromotion(from, to)) {
+                    this.showPromotionDialog(from, to, this.gameRef.getCurrentPlayer());
+                } else {
+                    // Execute the move
+                    if (this.callbacks.onMove) {
+                        this.callbacks.onMove({ from, to });
+                    }
+                }
+            }
+        }
+        
+        // Reset drag state and clear highlights
+        this.resetDragState();
+        this.clearHighlights();
+    }
+    
+    // New method to reset drag-related state
+    resetDragState() {
+        if (this.draggedPiece) {
+            this.draggedPiece.style.opacity = '1';
+        }
+        this.isDragging = false;
+        this.isPotentialDrag = false;
+        this.draggedPiece = null;
+        this.dragStartPosition = null;
+        this.mouseDownPosition = null;
     }
 
     createSquares(squaresContainer) {
@@ -192,6 +431,10 @@ class ChessBoard {
 
     // Handle click events on squares
     handleSquareClick(event, game) {
+        // Only process clicks when we're not dragging
+        // This prevents click events from firing after a drag
+        if (this.isDragging || this.isPotentialDrag) return;
+        
         const square = event.target.closest('.square');
         if (!square) return;
         
@@ -223,7 +466,7 @@ class ChessBoard {
                 const to = { row: actualRow, col: actualCol };
 
                 // Check if this is a pawn promotion
-                if (game.isPromotion(from, to)) {
+                if (game.isPromotion && game.isPromotion(from, to)) {
                     this.showPromotionDialog(from, to, game.getCurrentPlayer());
                 } else {
                     // Make the move
